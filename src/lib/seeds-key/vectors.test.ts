@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hex } from "@scure/base";
 import { coinIdentityKey, signTxcMessage, walletPocketWords } from "@/lib/key-signin/seeds-key-reference";
+import { walletPocketMessage, pairingCode, checksumEvmAddress } from "@/lib/key-signin/rules";
 import { pocketsFromMnemonic } from "@/lib/pockets/derive";
 import { allowedManifestUrl, checkManifest, readSubmit } from "./manifest";
 
@@ -19,8 +20,8 @@ describe("Seeds Key test vectors", () => {
       expect(all).toContain(v);
   });
   it("outside wallet pocket words", () => {
-    const sig = hex.decode("974236d70f173f89e79c18ef8695f55923b95377e4831b0ce902e8f28b407fb144a55c70ecd32f4c9945c7759e04da2d89f538d317efbc49386abbde0d02c5591c");
-    expect(walletPocketWords(sig, "key.example")).toBe("recall oil illness fancy announce curtain kiwi body certain blouse drill shock diary purchase fortune arrest police neutral define trash degree tourist adapt scissors");
+    const sig = hex.decode("fb124074c5b142a7fd343341e1b7b0daab2d21761635b82c52e43dbaf9d6d88709a5754319c0595ec99cf2d791c3ee3e02786934a05147f1c79866f3cde4a4511c");
+    expect(walletPocketWords(sig, "key.example")).toBe("educate unveil nation talent turtle mother satisfy diesel nerve huge riot disorder video belt romance caught morning escape canoe top crystal various real same");
   });
 });
 
@@ -38,4 +39,10 @@ describe("only talks to Seeds", () => {
   it("409 use_pocket asks for another pocket", () => {
     expect(readSubmit(409, { error: "use_pocket", account: 1107 })).toEqual({ ok: false, usePocket: 1107 });
   });
+});
+
+it("guide match code and EIP-55 identity", () => {
+  expect(pairingCode("c".repeat(48))).toBe("673");
+  expect(checksumEvmAddress("0x2c7536e3605d9c16a7a3d7b1898e529396a65c23")).toBe("0x2c7536E3605D9C16a7a3D7b1898e529396a65c23");
+  expect(walletPocketMessage("key.seeds.honest.money", "evm", "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23")).toContain("Nonce: SeedsPocket2\nIssued At: 2026-11-21T00:00:00.000Z");
 });

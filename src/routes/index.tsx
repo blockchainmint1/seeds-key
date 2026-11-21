@@ -4,7 +4,8 @@ import jsQR from "jsqr";
 import { Camera, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/SiteFooter";
-import { loadManifest, seedsReturnUrl, validateActiveManifest, type FullManifest } from "@/lib/seeds-key/manifest";
+import { loadManifest, seedsReturnUrl, validateActiveManifest, type FullManifest, type HandoffResult } from "@/lib/seeds-key/manifest";
+import { pairingCode } from "@/lib/key-signin/rules";
 import { coinSignIn, hasEvm, hasSol, phraseFromQr, walletSignIn } from "@/lib/seeds-key/flows";
 
 type Search = { kind?: "coin" | "wallet"; r?: string };
@@ -27,16 +28,18 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Done = { pocket: number; newAccount: boolean };
+type Done = HandoffResult;
 
 function Index() {
   const { kind, r } = Route.useSearch();
   const [manifest, setManifest] = useState<FullManifest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
+  const [acceptedChallenge, setAcceptedChallenge] = useState<string | null>(null);
+  const [signer, setSigner] = useState<string | null>(null);
 
   useEffect(() => {
-    setManifest(null); setDone(null); setError(null);
+    setManifest(null); setDone(null); setError(null); setAcceptedChallenge(null); setSigner(null);
     if (!r) return;
     const controller = new AbortController();
     loadManifest(r, controller.signal).then((m) => {
@@ -48,14 +51,30 @@ function Index() {
   return (
     <Page>
       <div className="animate-sprout">
-        {!r ? <Welcome /> : done && manifest ? <Success manifest={manifest} done={done} kind={kind ?? "coin"} /> : error && !manifest ? (
+        {!r ? <Welcome /> : done && manifest ? <Success manifest={manifest} done={done} kind={kind ?? "coin"} signer={signer} /> : error && !manifest ? (
           <Problem text={error} />
         ) : !manifest ? (
           <p className="text-muted-foreground">Checking this request with Seeds…</p>
         ) : (
           <>
             <SiteBadge m={manifest} />
-            {kind === "wallet" ? <WalletFlow m={manifest} onDone={setDone} /> : <CoinFlow m={manifest} onDone={setDone} />}
+            {acceptedChallenge !== manifest.challenge_id ? (
+              <div className="space-y-5 text-center">
+                <h1 className="text-3xl">Check your match code</h1>
+                <div className="font-mono text-7xl text-primary" aria-label="Match code">{pairingCode(manifest.challenge)}</div>
+                <p className="text-muted-foreground">Your Seeds screen shows a match code. Only continue if it's the same three digits. If you didn't start this on your own Seeds screen, stop.</p>
+                <Button size="lg" className="w-full" onClick={() => {
+                  try { validateActiveManifest(manifest); setAcceptedChallenge(manifest.challenge_id); setError(null); }
+                  catch (e) { setError(e instanceof Error ? e.message : "Start again on Seeds."); }
+                }}>Continue</Button>
+                {error && <Problem text={error} />}
+              </div>
+            ) : (
+              <>
+                {signer && <p className="mb-5 break-words font-mono text-lg text-primary">{signer}</p>}
+                {kind === "wallet" ? <WalletFlow m={manifest} onDone={setDone} onIdentity={setSigner} /> : <CoinFlow m={manifest} onDone={setDone} onIdentity={setSigner} />}
+              </>
+            )}
           </>
         )}
       </div>
@@ -93,7 +112,7 @@ function Problem({ text }: { text: string }) {
   return <div className="panel border-destructive/50 p-5 text-destructive">{text}</div>;
 }
 
-function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void }) {
+function CoinFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Done) => void; onIdentity: (name: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -129,7 +148,7 @@ function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void })
             const words = phraseFromQr(code.data);
             if (words) {
               stop = true; setScanning(false); setBusy(true); setErr(null);
-              coinSignIn(m, words).then(onDone, (e: Error) => setErr(e.message)).finally(() => setBusy(false));
+              coinSignIn(m, words, onIdentity).then(onDone, (e: Error) => setErr(e.message)).finally(() => setBusy(false));
               return;
             }
             setErr("That QR isn't a recovery phrase. Scan the phrase QR under your coin's seal.");
@@ -140,7 +159,7 @@ function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void })
       tick();
     }, () => { setErr("Camera access was blocked. Allow the camera and try again."); setScanning(false); });
     return () => { stop = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); ctx.clearRect(0, 0, canvas.width, canvas.height); };
-  }, [scanning, m, onDone]);
+  }, [scanning, m, onDone, onIdentity]);
 
   return (
     <div className="space-y-5">
@@ -155,7 +174,7 @@ function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void })
   );
 }
 
-function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void }) {
+function WalletFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Done) => void; onIdentity: (name: string) => void }) {
   const [step, setStep] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [avail, setAvail] = useState({ evm: false, sol: false });
@@ -166,14 +185,14 @@ function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void 
       if (m.kinds && !m.kinds.includes(which)) throw new Error("This request doesn't allow this wallet. Start again on Seeds.");
     } catch (e) { setErr(e instanceof Error ? e.message : "Start again on Seeds."); return; }
     setErr(null); setStep("Connecting…");
-    walletSignIn(m, which, setStep).then(onDone, (e: Error) => setErr(e.message)).finally(() => setStep(null));
+    walletSignIn(m, which, setStep, onIdentity).then(onDone, (e: Error) => setErr(e.message)).finally(() => setStep(null));
   };
   return (
     <div className="space-y-5">
       <h1 className="text-4xl">Use your own wallet</h1>
       <p className="text-muted-foreground">Your wallet will ask for three signatures. The first two build your Seeds trading pocket on this device; the third signs you in. No coins move.</p>
       {step ? <p className="text-primary">{step}</p> : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 [&_button]:h-auto [&_button]:min-h-12 [&_button]:whitespace-normal [&_button]:py-3">
           <Button size="lg" disabled={!avail.evm} onClick={() => go("evm")}><Wallet /> MetaMask, Rabby, Coinbase, Ledger, Trezor</Button>
           <Button size="lg" variant="secondary" disabled={!avail.sol} onClick={() => go("sol")}><Wallet /> Phantom (Solana)</Button>
           {!avail.evm && !avail.sol && <p className="text-sm text-muted-foreground">No wallet found in this browser. Open this page inside your wallet app's browser, or use a Cold Storage Coin.</p>}
@@ -184,12 +203,15 @@ function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void 
   );
 }
 
-function Success({ manifest, done, kind }: { manifest: FullManifest; done: Done; kind: "coin" | "wallet" }) {
+function Success({ manifest, done, kind, signer }: { manifest: FullManifest; done: Done; kind: "coin" | "wallet"; signer: string | null }) {
   return (
     <div className="space-y-5 text-center">
-      <CheckCircle2 className="mx-auto size-16 text-success" />
-      <h1 className="text-4xl">You're signed in on Seeds</h1>
-      <p className="text-muted-foreground">{done.newAccount ? "Your new account is ready." : "Welcome back."} Trading pocket #{done.pocket}. Your Seeds tab will sign itself in within a few seconds.</p>
+      {done.signedIn ? <CheckCircle2 className="mx-auto size-16 text-success" /> : <ShieldCheck className="mx-auto size-16 text-primary" />}
+      <h1 className="text-4xl">{done.signedIn ? "Your key is ready on Seeds" : "Confirm on Seeds"}</h1>
+      {signer && <p className="break-words font-mono text-lg text-primary">{signer}</p>}
+      <p className="text-muted-foreground">{done.signedIn
+        ? `${done.newAccount ? "Your new account is ready." : "Welcome back."} Trading pocket #${done.pocket}. Your Seeds screen will ask you to confirm this is you.`
+        : "Finish on your Seeds screen — it will ask you to confirm the key change."}</p>
       <Button asChild size="lg"><a href={seedsReturnUrl(manifest, kind)}>Back to Seeds</a></Button>
     </div>
   );

@@ -25,6 +25,8 @@ const b58c = createBase58check(sha256);
 export type KeyManifest = {
   type: "seeds-key-signin"; version: 1; domain: string; challenge_id: string; challenge: string;
   recipient_pubkey: string; submit_url: string; expires_at: string; pocket: number;
+  /** Seeds Key host and request time: wallet sign-ins sign them (Sign-In with Ethereum / Solana layout). */
+  key_host: string | null; issued_at: string;
 };
 
 function concat(...parts: Uint8Array[]): Uint8Array {
@@ -80,12 +82,13 @@ export function coinIdentityKey(words: string): Uint8Array {
 }
 
 /**
- * Outside wallets: their signature over walletPocketMessage(host) becomes a
+ * Outside wallets: their signature over walletPocketMessage(host, kind, address) becomes a
  * 24-word phrase on the device, and the pocket comes from that phrase.
- * Same wallet + same message → same signature (RFC 6979) → same pocket.
+ * Same wallet + same message → same signature (RFC 6979 / ed25519) → same pocket.
+ * v2 = the Sign-In with Ethereum/Solana message layout (v1 was never used by members).
  */
 export function walletPocketWords(signature: Uint8Array, keyHost: string): string {
-  const entropy = hkdf(sha256, signature, enc.encode("seeds-key wallet pocket v1"), enc.encode(keyHost), 32);
+  const entropy = hkdf(sha256, signature, enc.encode("seeds-key wallet pocket v2"), enc.encode(keyHost), 32);
   try { return entropyToMnemonic(entropy, wordlist); } finally { entropy.fill(0); }
 }
 
@@ -96,7 +99,10 @@ export async function buildHandoff(p: { manifest: KeyManifest; words: string; ki
   const sealed = await sealTo(p.manifest.recipient_pubkey, enc.encode(JSON.stringify(bundle.xprvs)));
   for (const k of Object.keys(bundle.xprvs)) (bundle.xprvs as Record<string, string>)[k] = "";
   const payloadSha = hex.encode(sha256(sealed));
-  const message = keySigninMessage({ domain: p.manifest.domain, challenge: p.manifest.challenge, kind: p.kind, identity: p.identity, account, paths: bundle.paths, payloadSha });
+  const message = keySigninMessage({
+    domain: p.manifest.domain, challenge: p.manifest.challenge, kind: p.kind, identity: p.identity, account, paths: bundle.paths, payloadSha,
+    keyHost: p.manifest.key_host ?? undefined, issuedAt: p.manifest.issued_at, expiresAt: p.manifest.expires_at,
+  });
   return {
     message,
     body: { token: p.manifest.challenge_id, kind: p.kind, identity_address: p.identity, account, paths: bundle.paths, xpubs: bundle.xpubs, payload: base64urlnopad.encode(sealed) },

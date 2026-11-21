@@ -34,6 +34,8 @@ use the editor.
 - The recovery phrase must never be sent, stored, logged or shown; only `src/lib/seeds-key/flows.ts` touches it, in memory.
 - Manifest trust uses `src/lib/seeds-key/policy.ts`: only designated Key previews may trust the SEEDS preview; all other hosts are production-only, so editing access cannot authorize live pocket handoffs.
 - Validate manifests and submit responses through `src/lib/seeds-key/manifest.ts` before key work and again before POST; URL-derived identity, exact protocol endpoints, expiry and pocket bounds prevent relay and malformed-request acceptance.
+- Bind manifests to the current Key host, request times and computed pairing code; mount scanning/signing controls only after Continue, and distinguish held key changes from success because SEEDS requires final confirmation.
+- Prefer Phantom's native signIn with byte-exact SIWS text; discard nonmatching native signatures before an exact-text signMessage fallback, and require repeatable signatures because formatting changes strand deterministic pockets.
 - No third-party scripts, fonts or analytics; the server overwrites an internal nonce header and the isomorphic router factory reads it before SSR script initialization, while shared header helpers cover normal and error responses without preventing designated editor previews.
 - The live host `key.seeds.honest.money` must never change: wallet pockets are derived from it.
 - Brand fonts are self-hosted in public/fonts, never loaded from Google Fonts: the strict CSP and no-third-party rule forbid external font hosts.

@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { base64urlnopad } from "@scure/base";
 import { coinSignIn, walletSignIn } from "./flows";
 import type { FullManifest } from "./manifest";
@@ -9,20 +9,22 @@ const fixture = (): FullManifest => ({
   challenge_id: "a".repeat(32), challenge: "c".repeat(48),
   recipient_pubkey: base64urlnopad.encode(new Uint8Array(32).fill(1)),
   submit_url: "https://seeds.honest.money/api/public/key-signin/submit",
+  key_host: "localhost:8080", issued_at: new Date(Date.now() - 1000).toISOString(), pairing_code: "673",
   expires_at: new Date(Date.now() + 60_000).toISOString(), pocket: 1106,
 });
+beforeEach(() => vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" } }));
 afterEach(() => vi.unstubAllGlobals());
 
 it("rejects expired coin requests before attempting phrase validation or derivation", async () => {
   const m = fixture(); m.expires_at = new Date(0).toISOString();
-  await expect(coinSignIn(m, "deliberately not a recovery phrase")).rejects.toThrow(/expired/);
+  await expect(coinSignIn(m, "deliberately not a recovery phrase")).rejects.toThrow(/already used or ran out/);
 });
 
 it("rejects expired wallet requests before opening a provider", async () => {
   const request = vi.fn(), step = vi.fn();
   vi.stubGlobal("window", { location: { origin: "http://localhost:8080" }, ethereum: { request } });
   const m = fixture(); m.expires_at = new Date(0).toISOString();
-  await expect(walletSignIn(m, "evm", step)).rejects.toThrow(/expired/);
+  await expect(walletSignIn(m, "evm", step)).rejects.toThrow(/already used or ran out/);
   expect(request).not.toHaveBeenCalled(); expect(step).not.toHaveBeenCalled();
 });
 
