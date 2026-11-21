@@ -85,12 +85,19 @@ export async function ledgerSignIn(
   const path = checkedLedgerPath(selectedPath);
   // This call must precede any await so the prepared SDK opens its picker on the click.
   const session = await prepared.open(kind);
-  const disconnected = new AbortController();
-  const stopListening = session.onDisconnect(() => disconnected.abort(new Error("Ledger disconnected. Reconnect it and start again.")));
-  const activeSignal = AbortSignal.any([signal, disconnected.signal]);
+  const active = new AbortController();
+  const activeSignal = active.signal;
+  const abortFromCaller = () => active.abort(signal.reason);
   const abortClose = () => { void session.close(); };
-  activeSignal.addEventListener("abort", abortClose, { once: true });
+  let stopListening = () => {};
   try {
+    // Wire both cancellation sources without AbortSignal.any (absent in older Chromium).
+    // All post-picker setup belongs inside cleanup, including listener registration.
+    activeSignal.addEventListener("abort", abortClose, { once: true });
+    signal.addEventListener("abort", abortFromCaller, { once: true });
+    if (signal.aborted) abortFromCaller();
+    activeSignal.throwIfAborted();
+    stopListening = session.onDisconnect(() => active.abort(new Error("Ledger disconnected. Reconnect it and start again.")));
     activeSignal.throwIfAborted(); validateActiveManifest(manifest);
     onStep("Confirm your Ethereum address on Ledger…");
     const result = await session.eth.getAddress(path, true, false);
@@ -113,7 +120,9 @@ export async function ledgerSignIn(
       },
     });
   } finally {
-    activeSignal.removeEventListener("abort", abortClose); stopListening(); await session.close();
+    signal.removeEventListener("abort", abortFromCaller);
+    activeSignal.removeEventListener("abort", abortClose);
+    try { stopListening(); } finally { await session.close(); }
   }
 }
 

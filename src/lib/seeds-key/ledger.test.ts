@@ -114,3 +114,58 @@ it("detects browser APIs only in a secure context", () => {
   vi.stubGlobal("window", { isSecureContext: false });
   expect(ledgerCapabilities()).toEqual({ hid: false, ble: false });
 });
+
+it("completes all three signatures without native AbortSignal.any", async () => {
+  vi.stubGlobal("AbortSignal", { any: undefined });
+  const d = device();
+  const result = await ledgerSignIn(fixture(), d.prepared, "hid", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), new AbortController().signal);
+  expect(result).toMatchObject({ signedIn: false, needsConfirm: true, pocket: 1106 });
+  expect(d.signPersonalMessage).toHaveBeenCalledTimes(3);
+  expect(d.close).toHaveBeenCalledTimes(1); expect(d.remove).toHaveBeenCalledTimes(1);
+});
+
+it("cancellation without native AbortSignal.any closes and prevents a late signature posting", async () => {
+  vi.stubGlobal("AbortSignal", { any: undefined });
+  const d = device(), caller = new AbortController();
+  const remove = vi.spyOn(caller.signal, "removeEventListener");
+  d.signPersonalMessage.mockImplementationOnce(async (_path, text) => { caller.abort(); return signature(text); });
+  await expect(ledgerSignIn(fixture(), d.prepared, "hid", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), caller.signal)).rejects.toThrow();
+  expect(d.close).toHaveBeenCalled(); expect(d.remove).toHaveBeenCalledTimes(1);
+  expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+  expect(d.signPersonalMessage).toHaveBeenCalledTimes(1); expect(fetch).not.toHaveBeenCalled();
+});
+
+it("disconnect without native AbortSignal.any closes and prevents a late signature posting", async () => {
+  vi.stubGlobal("AbortSignal", { any: undefined });
+  const d = device();
+  d.signPersonalMessage.mockImplementationOnce(async (_path, text) => { d.disconnect(); return signature(text); });
+  await expect(ledgerSignIn(fixture(), d.prepared, "ble", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), new AbortController().signal)).rejects.toThrow("disconnected");
+  expect(d.close).toHaveBeenCalled(); expect(d.remove).toHaveBeenCalledTimes(1);
+  expect(d.signPersonalMessage).toHaveBeenCalledTimes(1); expect(fetch).not.toHaveBeenCalled();
+});
+
+it("disconnect-listener setup failure still closes the opened transport", async () => {
+  const d = device();
+  const session = await d.prepared.open("hid");
+  session.onDisconnect = () => { throw new Error("Listener setup failed"); };
+  const caller = new AbortController(), remove = vi.spyOn(caller.signal, "removeEventListener");
+  await expect(ledgerSignIn(fixture(), d.prepared, "hid", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), caller.signal)).rejects.toThrow("Listener setup failed");
+  expect(d.close).toHaveBeenCalledTimes(1); expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+  expect(d.getAddress).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
+});
+
+it("disconnect-listener cleanup failure cannot skip closing the transport", async () => {
+  const d = device();
+  d.getAddress.mockRejectedValueOnce(new Error("Address rejected"));
+  d.remove.mockImplementationOnce(() => { throw new Error("Listener cleanup failed"); });
+  await expect(ledgerSignIn(fixture(), d.prepared, "hid", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), new AbortController().signal)).rejects.toThrow("Listener cleanup failed");
+  expect(d.close).toHaveBeenCalledTimes(1); expect(fetch).not.toHaveBeenCalled();
+});
+
+it("cancelling while the picker is pending closes its late session without requesting an address", async () => {
+  const d = device(), caller = new AbortController();
+  const session = await d.prepared.open("hid");
+  d.prepared.open = async () => { caller.abort(); return session; };
+  await expect(ledgerSignIn(fixture(), d.prepared, "hid", DEFAULT_LEDGER_PATH, vi.fn(), vi.fn(), caller.signal)).rejects.toThrow();
+  expect(d.close).toHaveBeenCalled(); expect(d.getAddress).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
+});

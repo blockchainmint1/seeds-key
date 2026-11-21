@@ -2,7 +2,7 @@
 
 ## Ledger and approved audit follow-ups
 - [x] Review fourth-round Ledger audit against current code and loading-repair supplement; 72 tests pass, no application changes applied. Audit covers 7014e33, not the later 0d1d102 loading repair.
-- [ ] Limited Ledger follow-ups — blocked: Bobby's approval for same-path recovery notice, adjacent signer display, older-browser cancellation/cleanup repair and globals documentation; transport migration and publication remain held.
+- [x] Implement approved limited Ledger follow-ups: same-path recovery notice, adjacent signer display, older-browser cancellation/cleanup repair and globals documentation; 78 tests pass and desktop/mobile simulated flows verified; auditor supplement prepared. Transport migration and publication remain held.
 - [x] Repair reproduced live-site Ledger packaging configuration; 72 tests pass including final production alias resolution. Live correction remains blocked on independent review and an approved release; compiled deployment and physical hardware not verified.
 - [x] Add direct Ledger USB/Bluetooth Ethereum signing with device cleanup and unchanged SEEDS pocket derivation.
 - [x] Apply approved 60-second issued-at tolerance with strict expiry and separate local time errors; add exact SIWS field coverage.
