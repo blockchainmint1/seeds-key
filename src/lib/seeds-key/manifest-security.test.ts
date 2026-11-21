@@ -133,3 +133,12 @@ describe("fetch and handoff boundaries", () => {
     expect(build).toHaveBeenCalledTimes(5); expect(sign).toHaveBeenCalledTimes(5);
   });
 });
+import { isKeyPreview as previewCheck } from "./policy";
+describe("localhost dev-only trust", () => {
+  it("rejects localhost outside development", () => {
+    expect(previewCheck("http://localhost:8080", false)).toBe(false);
+  });
+  it("accepts localhost in development", () => {
+    expect(previewCheck("http://localhost:8080", true)).toBe(true);
+  });
+});

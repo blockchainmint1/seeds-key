@@ -7,4 +7,4 @@
 - [x] Deliver a fresh source packet and verification report for the independent auditor.
 - [ ] Coordinate H2 session delivery with SEEDS — blocked: SEEDS is read-only from this project; no protocol change is approved here.
 - [ ] Resolve H1/M4 wallet phishing/recovery — blocked: redesign and legacy-pocket migration are explicitly on hold.
-- [ ] Publish — blocked: withheld by Bobby pending separate repairs and third-party re-audit.
+- [ ] Publish — blocked: withheld by Bobby pending separate repairs and third-party re-audit.- [x] Re-audit tidy-ups: localhost trust limited to development builds; unused UI packages removed (dependency warnings 25 -> 3, all build tooling).
