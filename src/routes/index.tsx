@@ -85,7 +85,7 @@ function Index() {
 function Welcome() {
   return (
     <div className="space-y-6">
-      <h1 className="text-5xl leading-tight">Your coin is your wallet. Do not lose it, ever.</h1>
+      <h1 className="text-5xl leading-tight">Securely access seeds with your own coin or wallet.</h1>
       <p className="text-lg text-muted-foreground">
         Seeds Key lets every coin holder open a Seeds Exchange account with a Cold Storage Coin or their own wallet — no passwords, and your recovery phrase never leaves this device.
       </p>
