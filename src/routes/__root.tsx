@@ -81,14 +81,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Seeds Key" },
+      { name: "description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
+      { name: "author", content: "Honest Money Ecosystem" },
+      { property: "og:title", content: "Seeds Key" },
+      { property: "og:description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

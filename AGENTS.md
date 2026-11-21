@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Seeds Key rules
+- `src/lib/pockets/*` and `src/lib/key-signin/{rules,seeds-key-reference}.ts` are verbatim copies from the SEEDS project; never edit them here, re-copy instead. tsconfig matches SEEDS' strictness so they compile unchanged.
+- The recovery phrase must never be sent, stored, logged or shown; only `src/lib/seeds-key/flows.ts` touches it, in memory.
+- Manifests are accepted only from the allow-list in `src/lib/seeds-key/manifest.ts`, and `submit_url` must share the manifest origin.
+- No third-party scripts, fonts or analytics; strict CSP is set in `src/server.ts` for the live host.
+- The live host `key.seeds.honest.money` must never change: wallet pockets are derived from it.

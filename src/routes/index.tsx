@@ -1,23 +1,179 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import jsQR from "jsqr";
+import { Camera, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Page } from "@/components/SiteFooter";
+import { loadManifest, type FullManifest } from "@/lib/seeds-key/manifest";
+import { coinSignIn, hasEvm, hasSol, phraseFromQr, walletSignIn } from "@/lib/seeds-key/flows";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+type Search = { kind?: "coin" | "wallet"; r?: string };
+
 export const Route = createFileRoute("/")({
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    ...(s["kind"] === "coin" || s["kind"] === "wallet" ? { kind: s["kind"] } : {}),
+    ...(typeof s["r"] === "string" ? { r: s["r"] } : {}),
+  }),
+  head: () => ({
+    meta: [
+      { title: "Seeds Key — sign in to Seeds with your coin or wallet" },
+      { name: "description", content: "Open your Seeds Exchange account with a Cold Storage Coin or your own wallet. Your recovery phrase never leaves your device." },
+      { property: "og:title", content: "Seeds Key — sign in with your coin or wallet" },
+      { property: "og:description", content: "The easy, private onramp to Seeds Exchange for TXC, ISK and ZCU holders." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+type Done = { pocket: number; newAccount: boolean };
+
 function Index() {
+  const { kind, r } = Route.useSearch();
+  const [manifest, setManifest] = useState<FullManifest | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
+
+  useEffect(() => {
+    if (!r) return;
+    loadManifest(r).then(setManifest, (e: Error) => setError(e.message));
+  }, [r]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <Page>
+      <div className="animate-sprout">
+        {!r ? <Welcome /> : done ? <Success manifest={manifest!} done={done} /> : error && !manifest ? (
+          <Problem text={error} />
+        ) : !manifest ? (
+          <p className="text-muted-foreground">Checking this request with Seeds…</p>
+        ) : (
+          <>
+            <SiteBadge m={manifest} />
+            {kind === "wallet" ? <WalletFlow m={manifest} onDone={setDone} /> : <CoinFlow m={manifest} onDone={setDone} />}
+          </>
+        )}
+      </div>
+    </Page>
+  );
+}
+
+function Welcome() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-5xl leading-tight">Your coin is your key.</h1>
+      <p className="text-lg text-muted-foreground">
+        Seeds Key lets TXC, ISK and ZCU holders open a Seeds Exchange account with a Cold Storage Coin or their own wallet — no passwords, and your recovery phrase never leaves this device.
+      </p>
+      <div className="panel p-5 text-sm text-muted-foreground">
+        Start from <a className="text-primary underline" href="https://seeds.honest.money">seeds.honest.money</a> and choose “Start with a coin” or “Use my wallet”. Seeds will send you here.
+      </div>
+    </div>
+  );
+}
+
+function SiteBadge({ m }: { m: FullManifest }) {
+  return (
+    <div className="panel mb-6 flex items-center gap-3 p-4">
+      <ShieldCheck className="size-6 shrink-0 text-success" />
+      <div className="text-sm">
+        <div>You're signing in to <strong>{m.app_name}</strong></div>
+        <div className="font-mono text-muted-foreground">{m.origin}</div>
+      </div>
+    </div>
+  );
+}
+
+function Problem({ text }: { text: string }) {
+  return <div className="panel border-destructive/50 p-5 text-destructive">{text}</div>;
+}
+
+function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const [scanning, setScanning] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!scanning) return;
+    let stream: MediaStream | null = null, raf = 0, stop = false;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then((s) => {
+      stream = s;
+      const v = video.current!;
+      v.srcObject = s;
+      v.play();
+      const tick = () => {
+        if (stop) return;
+        if (v.readyState >= 2) {
+          canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+          ctx.drawImage(v, 0, 0);
+          const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(img.data, img.width, img.height);
+          img.data.fill(0);
+          if (code) {
+            const words = phraseFromQr(code.data);
+            if (words) {
+              stop = true; setScanning(false); setBusy(true); setErr(null);
+              coinSignIn(m, words).then(onDone, (e: Error) => setErr(e.message)).finally(() => setBusy(false));
+              return;
+            }
+            setErr("That QR isn't a recovery phrase. Scan the phrase QR under your coin's seal.");
+          }
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      tick();
+    }, () => { setErr("Camera access was blocked. Allow the camera and try again."); setScanning(false); });
+    return () => { stop = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); ctx.clearRect(0, 0, canvas.width, canvas.height); };
+  }, [scanning, m, onDone]);
+
+  return (
+    <div className="space-y-5">
+      <h1 className="text-4xl">Scan your Cold Storage Coin</h1>
+      <p className="text-muted-foreground">Point your camera at the recovery-phrase QR. The words are never shown, sent or saved — only a signature and your sealed trading pocket go to Seeds.</p>
+      {scanning && <video ref={video} playsInline muted className="aspect-square w-full rounded-2xl bg-muted object-cover" />}
+      {busy ? <p className="text-primary">Building your trading pocket and signing you in…</p> : !scanning && (
+        <Button size="lg" className="w-full" onClick={() => { setErr(null); setScanning(true); }}><Camera /> Open camera</Button>
+      )}
+      {err && <Problem text={err} />}
+    </div>
+  );
+}
+
+function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void }) {
+  const [step, setStep] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [avail, setAvail] = useState({ evm: false, sol: false });
+  useEffect(() => setAvail({ evm: hasEvm(), sol: hasSol() }), []);
+  const go = (which: "evm" | "sol") => {
+    setErr(null); setStep("Connecting…");
+    walletSignIn(m, which, setStep).then(onDone, (e: Error) => setErr(e.message)).finally(() => setStep(null));
+  };
+  return (
+    <div className="space-y-5">
+      <h1 className="text-4xl">Use your own wallet</h1>
+      <p className="text-muted-foreground">Your wallet will ask for three signatures. The first two build your Seeds trading pocket on this device; the third signs you in. No coins move.</p>
+      {step ? <p className="text-primary">{step}</p> : (
+        <div className="grid gap-3">
+          <Button size="lg" disabled={!avail.evm} onClick={() => go("evm")}><Wallet /> MetaMask, Rabby, Coinbase, Ledger, Trezor</Button>
+          <Button size="lg" variant="secondary" disabled={!avail.sol} onClick={() => go("sol")}><Wallet /> Phantom (Solana)</Button>
+          {!avail.evm && !avail.sol && <p className="text-sm text-muted-foreground">No wallet found in this browser. Open this page inside your wallet app's browser, or use a Cold Storage Coin.</p>}
+        </div>
+      )}
+      {err && <Problem text={err} />}
+    </div>
+  );
+}
+
+function Success({ manifest, done }: { manifest: FullManifest; done: Done }) {
+  return (
+    <div className="space-y-5 text-center">
+      <CheckCircle2 className="mx-auto size-16 text-success" />
+      <h1 className="text-4xl">You're signed in on Seeds</h1>
+      <p className="text-muted-foreground">{done.newAccount ? "Your new account is ready." : "Welcome back."} Trading pocket #{done.pocket}. Your Seeds tab will sign itself in within a few seconds.</p>
+      <Button asChild size="lg"><a href={`${manifest.origin}/key-signin?kind=coin`}>Back to Seeds</a></Button>
     </div>
   );
 }

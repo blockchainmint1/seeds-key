@@ -52,7 +52,7 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
@@ -62,3 +62,24 @@ export default {
     }
   },
 };
+
+// Strict CSP on the live Seeds Key host only (the editor preview runs inside a frame).
+// 'unsafe-inline' for scripts/styles is needed by the app's server-rendered startup data.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "connect-src 'self' https://seeds.honest.money https://id-preview--0ce4bcf5-5883-4de0-96d3-b161585d1bf4.lovable.app",
+  "img-src 'self' data:",
+  "media-src 'self' blob: mediastream:",
+  "frame-ancestors 'none'",
+].join("; ");
+function withSecurityHeaders(request: Request, response: Response): Response {
+  if (new URL(request.url).hostname !== "key.seeds.honest.money") return response;
+  const r = new Response(response.body, response);
+  r.headers.set("content-security-policy", CSP);
+  r.headers.set("referrer-policy", "no-referrer");
+  r.headers.set("x-content-type-options", "nosniff");
+  r.headers.set("permissions-policy", "camera=(self), microphone=(), geolocation=()");
+  return r;
+}
