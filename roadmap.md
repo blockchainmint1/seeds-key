@@ -10,7 +10,8 @@
 - [x] Run 70 regression tests and desktop/mobile browser checks; prepare a fresh auditor source packet.
 - [x] Review fifth-round Ledger supplement re-audit; repairs confirmed at compiled-asset level, no application changes applied yet. Two live-host findings verified independently: project is published and public (last publish 2026-11-21 21:15 UTC), and platform visitor analytics/click tracking are enabled (the injected /__l5e script).
 - [x] Adopt audit-recommended protections — approved by Bobby 2026-11-21: strict-dynamic script policy, no-referrer meta tag, built-output guard script with AGENTS.md release-gate note. 79/79 tests pass, guard OK, preview verified; auditor supplement delivered. Live-host verification (injected script blocked, app and Ledger chunks load) is a standing step after the next publish.
-- [x] Publish-state decision — Bobby chose 2026-11-21 to keep the site live and public while the remaining audit items stay open; open H1/H2 risks are therefore live, not pending. Analytics toggle (project settings) and SEEDS-side link confirmation remain Bobby's actions.
+- [x] Publish-state decision — Bobby chose 2026-11-21 to keep the site live and public while the remaining audit items stay open; open H1/H2 risks are therefore live, not pending.
+- [x] Visitor analytics and click tracking switched off by Bobby 2026-11-21; verified off in project settings. Live host re-verified after the 21:24 UTC publish: strict-dynamic CSP live, no-referrer meta present, no /__l5e events script in HTML, page loads with zero console errors or failed requests. SEEDS-side link confirmation remains Bobby's action.
 - [ ] Physical Ledger and complete live SEEDS sign-in verification — blocked: hardware and coordinated live request required; publication remains held.
 
 - [x] Re-copy SEEDS reference files and verify guide v3 vectors.
