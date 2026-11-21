@@ -2,9 +2,12 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { newScriptNonce, withSecurityHeaders } from "./lib/seeds-key/security-headers";
+import type { RequestHandler } from "@tanstack/react-start/server";
+import type { Register } from "@tanstack/react-router";
 
 type ServerEntry = {
-  fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
+  fetch: RequestHandler<Register>;
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
@@ -48,38 +51,29 @@ function isH3SwallowedErrorBody(body: string): boolean {
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(request: Request, _env: unknown, _ctx: unknown) {
+    const nonce = newScriptNonce();
     try {
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
-      return withSecurityHeaders(request, await normalizeCatastrophicSsrResponse(response));
+      // Never trust a nonce supplied by the caller. Router construction reads only this overwrite.
+      const headers = new Headers(request.headers);
+      headers.set("x-seeds-key-script-nonce", nonce);
+      // The dev adapter's Request is not always the global Request implementation.
+      // Reconstruct from standard fields rather than cloning its private internal state.
+      const init: RequestInit & { duplex?: "half" } = { method: request.method, headers, signal: request.signal };
+      if (request.body && request.method !== "GET" && request.method !== "HEAD") {
+        init.body = request.body;
+        init.duplex = "half";
+      }
+      const response = await handler.fetch(new Request(request.url, init));
+      return withSecurityHeaders(request, await normalizeCatastrophicSsrResponse(response), nonce);
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
+      return withSecurityHeaders(request, new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      }), nonce);
     }
   },
 };
 
-// Strict CSP on the live Seeds Key host only (the editor preview runs inside a frame).
-// 'unsafe-inline' for scripts/styles is needed by the app's server-rendered startup data.
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' https://seeds.honest.money https://id-preview--0ce4bcf5-5883-4de0-96d3-b161585d1bf4.lovable.app",
-  "img-src 'self' data:",
-  "media-src 'self' blob: mediastream:",
-  "frame-ancestors 'none'",
-].join("; ");
-function withSecurityHeaders(request: Request, response: Response): Response {
-  if (new URL(request.url).hostname !== "key.seeds.honest.money") return response;
-  const r = new Response(response.body, response);
-  r.headers.set("content-security-policy", CSP);
-  r.headers.set("referrer-policy", "no-referrer");
-  r.headers.set("x-content-type-options", "nosniff");
-  r.headers.set("permissions-policy", "camera=(self), microphone=(), geolocation=()");
-  return r;
-}

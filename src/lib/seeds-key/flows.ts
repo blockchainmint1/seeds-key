@@ -3,7 +3,7 @@ import { validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
 import { buildHandoff, coinIdentityKey, signTxcMessage, walletPocketWords } from "@/lib/key-signin/seeds-key-reference";
 import { walletPocketMessage } from "@/lib/key-signin/rules";
-import { submitWithRetry, type FullManifest } from "./manifest";
+import { submitWithRetry, validateActiveManifest, type FullManifest } from "./manifest";
 
 /** Plain words, or SeedQR "standard" (4 digits per word). Returns null if not a valid phrase. */
 export function phraseFromQr(text: string): string | null {
@@ -16,6 +16,8 @@ export function phraseFromQr(text: string): string | null {
 }
 
 export async function coinSignIn(manifest: FullManifest, words: string) {
+  validateActiveManifest(manifest);
+  if (manifest.kinds && !manifest.kinds.includes("coin")) throw new Error("This request doesn't allow coin sign-in. Start again on Seeds.");
   const key = coinIdentityKey(words);
   try {
     const identity = signTxcMessage(key, "x").address;
@@ -39,11 +41,14 @@ const toHexMsg = (s: string) => "0x" + hex.encode(new TextEncoder().encode(s));
 const SAME_ERR = "Your wallet gave two different signatures, so it can't rebuild the same pocket each time (this happens with smart-contract and passkey wallets). Use a Cold Storage Coin or HME Wallet instead.";
 
 export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol", onStep: (s: string) => void) {
+  validateActiveManifest(manifest);
+  if (manifest.kinds && !manifest.kinds.includes(which)) throw new Error("This request doesn't allow this wallet. Start again on Seeds.");
   const host = location.host;
   const pm = walletPocketMessage(host);
   let identity: string, sigBytes: Uint8Array, sign: (m: string) => Promise<string>;
   if (which === "evm") {
-    const eth = w().ethereum!;
+    const eth = w().ethereum;
+    if (!eth) throw new Error("No Ethereum wallet was found in this browser.");
     const [addr] = (await eth.request({ method: "eth_requestAccounts" })) as string[];
     if (!addr) throw new Error("No wallet account was shared.");
     identity = addr;
@@ -56,7 +61,8 @@ export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol",
     sigBytes = hex.decode(a.replace(/^0x/, ""));
     sign = ps;
   } else {
-    const sol = w().phantom!.solana!;
+    const sol = w().phantom?.solana;
+    if (!sol) throw new Error("No Solana wallet was found in this browser.");
     const { publicKey } = await sol.connect();
     identity = base58.encode(publicKey.toBytes());
     const sm = async (m: string) => (await sol.signMessage(new TextEncoder().encode(m), "utf8")).signature;
@@ -68,15 +74,18 @@ export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol",
     sigBytes = a;
     sign = async (m) => hex.encode(await sm(m));
   }
-  let words = walletPocketWords(sigBytes, host);
-  sigBytes.fill(0);
+  let words = "";
   try {
+    validateActiveManifest(manifest);
+    words = walletPocketWords(sigBytes, host);
+    sigBytes.fill(0);
     return await submitWithRetry(
       manifest,
       (account) => buildHandoff({ manifest, words, kind: which, identity, ...(account ? { account } : {}) }),
       async (m) => { onStep("Signature 3 of 3 — signs you in on Seeds"); return sign(m); },
     );
   } finally {
+    sigBytes.fill(0);
     words = "";
   }
 }

@@ -8,6 +8,8 @@ export const Route = createFileRoute("/terms")({
       { name: "description", content: "Terms for using the Seeds Key sign-in page." },
       { property: "og:title", content: "Terms — Seeds Key" },
       { property: "og:description", content: "Terms for using the Seeds Key sign-in page." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

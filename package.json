@@ -15,7 +15,8 @@
   },
   "overrides": {
     "rolldown": "1.2.1",
-    "shell-quote": ">=1.11.0"
+    "shell-quote": ">=1.11.0",
+    "seroval": "1.6.12"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

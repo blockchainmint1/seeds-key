@@ -1,0 +1,18 @@
+/** Public deployment identities, never key-derivation inputs. */
+export const LIVE_KEY_ORIGIN = "https://key.seeds.honest.money";
+export const KEY_PREVIEW_ORIGIN = "https://id-preview--73bea008-b73f-48d4-9f72-8c26ed9d32ff.lovable.app";
+export const SEEDS_ORIGIN = "https://seeds.honest.money";
+export const SEEDS_PREVIEW_ORIGIN = "https://id-preview--0ce4bcf5-5883-4de0-96d3-b161585d1bf4.lovable.app";
+
+export function isKeyPreview(origin: string): boolean {
+  return origin === KEY_PREVIEW_ORIGIN || origin === "http://localhost:8080";
+}
+
+/** Unknown hosts fail closed to production-only Seeds trust. */
+export function seedsOrigins(keyOrigin: string): readonly string[] {
+  return isKeyPreview(keyOrigin) ? [SEEDS_ORIGIN, SEEDS_PREVIEW_ORIGIN] : [SEEDS_ORIGIN];
+}
+
+export function currentKeyOrigin(): string {
+  return typeof window === "undefined" ? LIVE_KEY_ORIGIN : window.location.origin;
+}

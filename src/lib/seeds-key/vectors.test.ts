@@ -26,7 +26,7 @@ describe("Seeds Key test vectors", () => {
 
 describe("only talks to Seeds", () => {
   it("accepts seeds.honest.money and rejects look-alikes", () => {
-    expect(allowedManifestUrl("https://seeds.honest.money/api/public/key-signin/manifest/1")).not.toBeNull();
+    expect(allowedManifestUrl("https://seeds.honest.money/api/public/key-signin/manifest/" + "a".repeat(32))).not.toBeNull();
     expect(allowedManifestUrl("https://seeds.honest.money.evil.com/x")).toBeNull();
     expect(allowedManifestUrl("http://seeds.honest.money/x")).toBeNull();
   });

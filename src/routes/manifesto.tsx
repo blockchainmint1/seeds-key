@@ -8,6 +8,8 @@ export const Route = createFileRoute("/manifesto")({
       { name: "description", content: "Why the Honest Money Ecosystem builds tools like Seeds Key." },
       { property: "og:title", content: "Manifesto — Seeds Key" },
       { property: "og:description", content: "Why the Honest Money Ecosystem builds tools like Seeds Key." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

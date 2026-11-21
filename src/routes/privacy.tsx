@@ -8,6 +8,8 @@ export const Route = createFileRoute("/privacy")({
       { name: "description", content: "Seeds Key never sees, sends or stores your recovery phrase." },
       { property: "og:title", content: "Privacy — Seeds Key" },
       { property: "og:description", content: "Seeds Key never sees, sends or stores your recovery phrase." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (

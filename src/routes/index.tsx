@@ -4,7 +4,7 @@ import jsQR from "jsqr";
 import { Camera, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/components/SiteFooter";
-import { loadManifest, type FullManifest } from "@/lib/seeds-key/manifest";
+import { loadManifest, seedsReturnUrl, validateActiveManifest, type FullManifest } from "@/lib/seeds-key/manifest";
 import { coinSignIn, hasEvm, hasSol, phraseFromQr, walletSignIn } from "@/lib/seeds-key/flows";
 
 type Search = { kind?: "coin" | "wallet"; r?: string };
@@ -36,14 +36,19 @@ function Index() {
   const [done, setDone] = useState<Done | null>(null);
 
   useEffect(() => {
+    setManifest(null); setDone(null); setError(null);
     if (!r) return;
-    loadManifest(r).then(setManifest, (e: Error) => setError(e.message));
+    const controller = new AbortController();
+    loadManifest(r, controller.signal).then((m) => {
+      if (!controller.signal.aborted) setManifest(m);
+    }, (e: Error) => { if (!controller.signal.aborted) setError(e.message); });
+    return () => controller.abort();
   }, [r]);
 
   return (
     <Page>
       <div className="animate-sprout">
-        {!r ? <Welcome /> : done ? <Success manifest={manifest!} done={done} /> : error && !manifest ? (
+        {!r ? <Welcome /> : done && manifest ? <Success manifest={manifest} done={done} kind={kind ?? "coin"} /> : error && !manifest ? (
           <Problem text={error} />
         ) : !manifest ? (
           <p className="text-muted-foreground">Checking this request with Seeds…</p>
@@ -96,12 +101,20 @@ function CoinFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void })
 
   useEffect(() => {
     if (!scanning) return;
+    try {
+      validateActiveManifest(m);
+      if (m.kinds && !m.kinds.includes("coin")) throw new Error("This request doesn't allow coin sign-in. Start again on Seeds.");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Start again on Seeds."); setScanning(false); return;
+    }
     let stream: MediaStream | null = null, raf = 0, stop = false;
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) { setErr("Couldn't open the camera. Try again."); setScanning(false); return; }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then((s) => {
       stream = s;
-      const v = video.current!;
+      const v = video.current;
+      if (stop || !v) { s.getTracks().forEach((t) => t.stop()); return; }
       v.srcObject = s;
       v.play();
       const tick = () => {
@@ -148,6 +161,10 @@ function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void 
   const [avail, setAvail] = useState({ evm: false, sol: false });
   useEffect(() => setAvail({ evm: hasEvm(), sol: hasSol() }), []);
   const go = (which: "evm" | "sol") => {
+    try {
+      validateActiveManifest(m);
+      if (m.kinds && !m.kinds.includes(which)) throw new Error("This request doesn't allow this wallet. Start again on Seeds.");
+    } catch (e) { setErr(e instanceof Error ? e.message : "Start again on Seeds."); return; }
     setErr(null); setStep("Connecting…");
     walletSignIn(m, which, setStep).then(onDone, (e: Error) => setErr(e.message)).finally(() => setStep(null));
   };
@@ -167,13 +184,13 @@ function WalletFlow({ m, onDone }: { m: FullManifest; onDone: (d: Done) => void 
   );
 }
 
-function Success({ manifest, done }: { manifest: FullManifest; done: Done }) {
+function Success({ manifest, done, kind }: { manifest: FullManifest; done: Done; kind: "coin" | "wallet" }) {
   return (
     <div className="space-y-5 text-center">
       <CheckCircle2 className="mx-auto size-16 text-success" />
       <h1 className="text-4xl">You're signed in on Seeds</h1>
       <p className="text-muted-foreground">{done.newAccount ? "Your new account is ready." : "Welcome back."} Trading pocket #{done.pocket}. Your Seeds tab will sign itself in within a few seconds.</p>
-      <Button asChild size="lg"><a href={`${manifest.origin}/key-signin?kind=coin`}>Back to Seeds</a></Button>
+      <Button asChild size="lg"><a href={seedsReturnUrl(manifest, kind)}>Back to Seeds</a></Button>
     </div>
   );
 }
