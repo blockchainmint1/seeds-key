@@ -160,7 +160,7 @@ describe("SEEDS v3 contract", () => {
   it("preserves issued-at and rejects invalid or overlong request times", () => {
     const f = fixture();
     expect(checkManifest(url(), f, LIVE_KEY_ORIGIN).issued_at).toBe(f.issued_at);
-    for (const issued_at of [undefined, "bad", new Date(Date.now() + 1000).toISOString(), new Date(Date.now() - 600_001).toISOString()]) {
+    for (const issued_at of [undefined, "bad", new Date(Date.now() + 60_001).toISOString(), new Date(Date.now() - 600_001).toISOString()]) {
       expect(() => checkManifest(url(), { ...f, issued_at }, LIVE_KEY_ORIGIN)).toThrow();
     }
   });
@@ -171,5 +171,17 @@ describe("SEEDS v3 contract", () => {
   });
   it("rejects used and expired requests without allowing another build", () => {
     expect(readSubmit(409, { error: "already used" })).toEqual(readSubmit(410, { error: "expired" }));
+  });
+  it("allows exactly 60 seconds of issued-at clock skew but not 60 seconds plus one millisecond", () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-21T20:40:00Z"));
+    const f = { ...fixture(), expires_at: new Date(Date.now() + 180_000).toISOString() };
+    expect(checkManifest(url(), { ...f, issued_at: new Date(Date.now() + 60_000).toISOString() }, LIVE_KEY_ORIGIN).issued_at).toBe("2026-11-21T20:41:00.000Z");
+    expect(() => checkManifest(url(), { ...f, issued_at: new Date(Date.now() + 60_001).toISOString() }, LIVE_KEY_ORIGIN)).toThrow();
+  });
+  it("clock tolerance does not extend expiry or the ten-minute lifetime", () => {
+    vi.useFakeTimers();
+    const f = fixture();
+    expect(() => checkManifest(url(), { ...f, expires_at: new Date(Date.now()).toISOString() }, LIVE_KEY_ORIGIN)).toThrow();
+    expect(() => checkManifest(url(), { ...f, issued_at: new Date(Date.now() - 600_000).toISOString(), expires_at: new Date(Date.now() + 1).toISOString() }, LIVE_KEY_ORIGIN)).toThrow();
   });
 });

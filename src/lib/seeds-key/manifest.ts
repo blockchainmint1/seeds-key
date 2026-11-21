@@ -7,6 +7,8 @@ import { currentKeyOrigin, SEEDS_PREVIEW_ORIGIN, seedsOrigins } from "./policy";
 export type FullManifest = KeyManifest & { app_name: string; origin: string; kinds?: KeyKind[]; pairing_code: string };
 const MANIFEST_PATH = /^\/api\/public\/key-signin\/manifest\/([a-f0-9]{32})$/;
 const EXPIRED = "This sign-in was already used or ran out. If you didn't finish it yourself, someone else may have used your code — on Seeds, tap \"No, that's not mine\" and start again.";
+const LOCAL_EXPIRED = "This sign-in request has expired. Check your device clock and start again on Seeds.";
+export const ISSUED_AT_SKEW_MS = 60_000;
 
 export function allowedManifestUrl(r: string | null | undefined, keyOrigin = currentKeyOrigin()): URL | null {
   if (!r) return null;
@@ -20,7 +22,7 @@ export function allowedManifestUrl(r: string | null | undefined, keyOrigin = cur
 
 function assertExpiry(expiresAt: string): void {
   const expires = Date.parse(expiresAt);
-  if (!Number.isFinite(expires) || expires <= Date.now()) throw new Error(EXPIRED);
+  if (!Number.isFinite(expires) || expires <= Date.now()) throw new Error(LOCAL_EXPIRED);
 }
 
 /** Only validated protocol values leave this boundary; branding is never supplied by JSON. */
@@ -51,10 +53,11 @@ export function checkManifest(url: URL, m: unknown, keyOrigin = currentKeyOrigin
   const keyHost = x["key_host"], issued = x["issued_at"], code = x["pairing_code"];
   if (keyHost !== new URL(keyOrigin).host) throw new Error("This sign-in request isn't for this Seeds Key page.");
   if (typeof issued !== "string" || !Number.isFinite(Date.parse(issued)) ||
-      Date.parse(issued) > Date.now() || Date.parse(issued) >= Date.parse(expires) ||
+      Date.parse(issued) >= Date.parse(expires) ||
       Date.parse(expires) - Date.parse(issued) > KEY_REQUEST_TTL_MS) {
     throw new Error("This sign-in request has invalid request times.");
   }
+  if (Date.parse(issued) > Date.now() + ISSUED_AT_SKEW_MS) throw new Error("This sign-in request isn't valid yet. Check your device clock and start again on Seeds.");
   if (typeof code !== "string" || code !== pairingCode(challenge)) throw new Error("This sign-in request has an invalid match code.");
   const kinds = x["kinds"];
   if (kinds !== undefined && (!Array.isArray(kinds) || !kinds.length || !kinds.every(isKeyKind))) {
@@ -123,18 +126,22 @@ export async function submitWithRetry(
   manifest: FullManifest,
   build: (account?: number) => Promise<{ message: string; body: Record<string, unknown> }>,
   sign: (message: string) => Promise<string>,
+  signal?: AbortSignal,
 ): Promise<HandoffResult> {
   let account: number | undefined;
   for (let i = 0; i < 5; i++) {
+    signal?.throwIfAborted();
     validateActiveManifest(manifest);
     const h = await build(account);
     const signature = await sign(h.message);
+    signal?.throwIfAborted();
     validateActiveManifest(manifest);
     const res = await fetch(manifest.submit_url, {
       method: "POST",
       credentials: "omit",
       redirect: "error",
       cache: "no-store",
+      ...(signal ? { signal } : {}),
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...h.body, message: h.message, signature }),
     });

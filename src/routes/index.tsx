@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import { Camera, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LedgerFlow } from "@/components/LedgerFlow";
 import { Page } from "@/components/SiteFooter";
 import { loadManifest, seedsReturnUrl, validateActiveManifest, type FullManifest, type HandoffResult } from "@/lib/seeds-key/manifest";
 import { pairingCode } from "@/lib/key-signin/rules";
@@ -178,8 +179,10 @@ function WalletFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Do
   const [step, setStep] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [avail, setAvail] = useState({ evm: false, sol: false });
+  const [ledgerBusy, setLedgerBusy] = useState(false);
   useEffect(() => setAvail({ evm: hasEvm(), sol: hasSol() }), []);
   const go = (which: "evm" | "sol") => {
+    if (ledgerBusy || step) return;
     try {
       validateActiveManifest(m);
       if (m.kinds && !m.kinds.includes(which)) throw new Error("This request doesn't allow this wallet. Start again on Seeds.");
@@ -193,11 +196,12 @@ function WalletFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Do
       <p className="text-muted-foreground">Your wallet will ask for three signatures. The first two build your Seeds trading pocket on this device; the third signs you in. No coins move.</p>
       {step ? <p className="text-primary">{step}</p> : (
         <div className="grid gap-3 [&_button]:h-auto [&_button]:min-h-12 [&_button]:whitespace-normal [&_button]:py-3">
-          <Button size="lg" disabled={!avail.evm} onClick={() => go("evm")}><Wallet /> MetaMask, Rabby, Coinbase, Ledger, Trezor</Button>
-          <Button size="lg" variant="secondary" disabled={!avail.sol} onClick={() => go("sol")}><Wallet /> Phantom (Solana)</Button>
-          {!avail.evm && !avail.sol && <p className="text-sm text-muted-foreground">No wallet found in this browser. Open this page inside your wallet app's browser, or use a Cold Storage Coin.</p>}
+          <Button size="lg" disabled={!avail.evm || ledgerBusy || !!m.kinds && !m.kinds.includes("evm")} onClick={() => go("evm")}><Wallet /> MetaMask, Rabby, Coinbase · Ledger/Trezor through wallet</Button>
+          <Button size="lg" variant="secondary" disabled={!avail.sol || ledgerBusy || !!m.kinds && !m.kinds.includes("sol")} onClick={() => go("sol")}><Wallet /> Phantom (Solana)</Button>
+          {!avail.evm && !avail.sol && <p className="text-sm text-muted-foreground">No browser wallet detected. You can connect Ledger directly below.</p>}
         </div>
       )}
+      <LedgerFlow manifest={m} onDone={onDone} onIdentity={onIdentity} disabled={!!step || ledgerBusy} onBusy={setLedgerBusy} />
       {err && <Problem text={err} />}
     </div>
   );

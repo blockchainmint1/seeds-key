@@ -111,3 +111,16 @@ it("wallet handoff messages bind both request timestamps and expiration", () => 
   const message = keySigninMessage({ domain: m.domain, challenge: m.challenge, kind: "sol", identity: SOL_ADDRESS, account: 1106, paths: [], payloadSha: "aa", keyHost: m.key_host ?? "", issuedAt: m.issued_at, expiresAt: m.expires_at });
   expect(message).toContain(`Issued At: ${m.issued_at}\nExpiration Time: ${m.expires_at}`);
 });
+
+it("native SIWS receives every exact handoff field including ordered resources", async () => {
+  const message = keySigninMessage({ domain: "seeds.honest.money", challenge: "c".repeat(48), kind: "sol", identity: SOL_ADDRESS, account: 1106,
+    paths: ["m/44'/696969'/1106'/0/0"], payloadSha: "a".repeat(64), keyHost: "key.seeds.honest.money",
+    issuedAt: "2026-11-21T20:40:00.000Z", expiresAt: "2026-11-21T20:50:00.000Z" });
+  const signIn = vi.fn(async () => ({ signedMessage: enc.encode(message), signature: ed25519.sign(enc.encode(message), SOL_KEY) }));
+  await signSolanaText({ signIn, signMessage: vi.fn() }, message, vi.fn());
+  expect(signIn).toHaveBeenCalledWith({ domain: "key.seeds.honest.money", address: SOL_ADDRESS,
+    statement: "Sign in to Seeds (seeds.honest.money) and give it the keys to trading pocket 1106 only, until I revoke. Signing in moves nothing. Only sign this on key.seeds.honest.money.",
+    uri: "https://key.seeds.honest.money", version: "1", chainId: "mainnet", nonce: "c".repeat(48),
+    issuedAt: "2026-11-21T20:40:00.000Z", expirationTime: "2026-11-21T20:50:00.000Z",
+    resources: ["https://seeds.honest.money", "urn:seeds:pocket:1106", "urn:seeds:path:m/44'/696969'/1106'/0/0", `urn:seeds:payload-sha256:${"a".repeat(64)}`] });
+});

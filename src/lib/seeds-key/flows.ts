@@ -42,13 +42,14 @@ export const hasSol = () => typeof window !== "undefined" && !!w().phantom?.sola
 const toHexMsg = (s: string) => "0x" + hex.encode(new TextEncoder().encode(s));
 const SAME_ERR = "Your wallet gave two different signatures, so it can't rebuild the same pocket each time (this happens with smart-contract and passkey wallets). Use a Cold Storage Coin or HME Wallet instead.";
 
-export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol", onStep: (s: string) => void, onIdentity: (name: string) => void = () => {}) {
+export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol", onStep: (s: string) => void, onIdentity: (name: string) => void = () => {}, options: { ethereum?: Eth; signal?: AbortSignal } = {}) {
+  options.signal?.throwIfAborted();
   validateActiveManifest(manifest);
   if (manifest.kinds && !manifest.kinds.includes(which)) throw new Error("This request doesn't allow this wallet. Start again on Seeds.");
   const host = window.location.host;
   let identity: string, sigBytes: Uint8Array, sign: (m: string) => Promise<string>;
   if (which === "evm") {
-    const eth = w().ethereum;
+    const eth = options.ethereum ?? w().ethereum;
     if (!eth) throw new Error("No Ethereum wallet was found in this browser.");
     const [addr] = (await eth.request({ method: "eth_requestAccounts" })) as string[];
     if (!addr) throw new Error("No wallet account was shared.");
@@ -56,7 +57,12 @@ export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol",
     if (!identity) throw new Error("The wallet shared an invalid address.");
     onIdentity(shortKeyName("evm", identity));
     const pm = walletPocketMessage(host, "evm", identity);
-    const ps = (m: string) => eth.request({ method: "personal_sign", params: [toHexMsg(m), addr] }) as Promise<string>;
+    const ps = async (m: string) => {
+      options.signal?.throwIfAborted();
+      const signature = await eth.request({ method: "personal_sign", params: [toHexMsg(m), addr] }) as string;
+      options.signal?.throwIfAborted();
+      return signature;
+    };
     onStep("Signature 1 of 3 — creates your pocket");
     const a = await ps(pm);
     onStep("Signature 2 of 3 — checks it's repeatable");
@@ -97,6 +103,7 @@ export async function walletSignIn(manifest: FullManifest, which: "evm" | "sol",
       manifest,
       (account) => buildHandoff({ manifest, words, kind: which, identity, ...(account ? { account } : {}) }),
       async (m) => { onStep("Signature 3 of 3 — signs you in on Seeds"); return sign(m); },
+      options.signal,
     );
   } finally {
     sigBytes.fill(0);

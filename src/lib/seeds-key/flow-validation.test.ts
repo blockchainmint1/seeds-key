@@ -17,14 +17,14 @@ afterEach(() => vi.unstubAllGlobals());
 
 it("rejects expired coin requests before attempting phrase validation or derivation", async () => {
   const m = fixture(); m.expires_at = new Date(0).toISOString();
-  await expect(coinSignIn(m, "deliberately not a recovery phrase")).rejects.toThrow(/already used or ran out/);
+  await expect(coinSignIn(m, "deliberately not a recovery phrase")).rejects.toThrow(/expired/);
 });
 
 it("rejects expired wallet requests before opening a provider", async () => {
   const request = vi.fn(), step = vi.fn();
   vi.stubGlobal("window", { location: { origin: "http://localhost:8080" }, ethereum: { request } });
   const m = fixture(); m.expires_at = new Date(0).toISOString();
-  await expect(walletSignIn(m, "evm", step)).rejects.toThrow(/already used or ran out/);
+  await expect(walletSignIn(m, "evm", step)).rejects.toThrow(/expired/);
   expect(request).not.toHaveBeenCalled(); expect(step).not.toHaveBeenCalled();
 });
 

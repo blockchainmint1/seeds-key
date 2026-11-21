@@ -8,8 +8,16 @@
 // hosting already compresses at the edge.
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+  vite: {
+    resolve: { alias: [
+      { find: /^buffer\/?$/, replacement: fileURLToPath(new URL("./node_modules/buffer/index.js", import.meta.url)) },
+      { find: /^events\/?$/, replacement: fileURLToPath(new URL("./node_modules/events/events.js", import.meta.url)) },
+    ] },
+    optimizeDeps: { include: ["buffer/index.js", "events", "@ledgerhq/hw-app-eth", "@ledgerhq/hw-transport-webhid", "@ledgerhq/hw-transport-web-ble"] },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
