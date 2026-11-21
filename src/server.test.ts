@@ -30,7 +30,8 @@ describe("server entry nonce and error coverage", () => {
     handler.mockRejectedValue(new Error("synthetic failure"));
     const response = await server.fetch(new Request(LIVE_KEY_ORIGIN), undefined, undefined);
     expect(response.status).toBe(500);
-    expect(response.headers.get("content-security-policy")).toContain("script-src 'self' 'nonce-");
+    expect(response.headers.get("content-security-policy")).toContain("script-src 'nonce-");
+    expect(response.headers.get("content-security-policy")).toContain("'strict-dynamic'");
     expect(response.headers.get("x-frame-options")).toBe("DENY");
   });
   it("covers swallowed SSR errors without exposing their internal response", async () => {

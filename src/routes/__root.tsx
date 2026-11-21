@@ -85,6 +85,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Seeds Key" },
       { name: "description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
       { name: "author", content: "Honest Money Ecosystem" },
+      // The hosting edge rewrites the Referrer-Policy header; a meta tag is applied
+      // by the browser after headers and survives that rewrite.
+      { name: "referrer", content: "no-referrer" },
       { property: "og:title", content: "Seeds Key" },
       { property: "og:description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
       { property: "og:type", content: "website" },

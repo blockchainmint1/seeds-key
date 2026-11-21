@@ -9,9 +9,17 @@ describe("security header boundaries", () => {
   });
   it("permits nonced scripts but not unrestricted inline scripts or preview connections in production", () => {
     const nonce = newScriptNonce(), csp = securityPolicy(LIVE_KEY_ORIGIN, nonce);
-    expect(csp.split("; ").find((part) => part.startsWith("script-src"))).toBe(`script-src 'self' 'nonce-${nonce}'`);
+    expect(csp.split("; ").find((part) => part.startsWith("script-src"))).toBe(`script-src 'nonce-${nonce}' 'strict-dynamic' 'self'`);
     expect(csp).toContain(`connect-src 'self' ${SEEDS_ORIGIN}`);
     expect(csp).not.toContain(SEEDS_PREVIEW_ORIGIN);
+  });
+  it("blocks hosting-injected scripts that lack the per-request nonce", () => {
+    // The live edge injects an un-nonced same-origin analytics tag. With strict-dynamic,
+    // supporting browsers ignore 'self', so only our nonced entry and its imports run.
+    const csp = securityPolicy(LIVE_KEY_ORIGIN, newScriptNonce());
+    const scriptSrc = csp.split("; ").find((part) => part.startsWith("script-src")) ?? "";
+    expect(scriptSrc).toContain("'strict-dynamic'");
+    expect(scriptSrc.indexOf("'nonce-")).toBeLessThan(scriptSrc.indexOf("'self'"));
   });
   it("rejects nonce text that could add an attacker script source", () => {
     expect(() => securityPolicy(LIVE_KEY_ORIGIN, "' https://evil.com")).toThrow();

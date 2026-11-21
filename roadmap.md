@@ -8,6 +8,9 @@
 - [x] Add direct Ledger USB/Bluetooth Ethereum signing with device cleanup and unchanged SEEDS pocket derivation.
 - [x] Apply approved 60-second issued-at tolerance with strict expiry and separate local time errors; add exact SIWS field coverage.
 - [x] Run 70 regression tests and desktop/mobile browser checks; prepare a fresh auditor source packet.
+- [x] Review fifth-round Ledger supplement re-audit; repairs confirmed at compiled-asset level, no application changes applied yet. Two live-host findings verified independently: project is published and public (last publish 2026-11-21 21:15 UTC), and platform visitor analytics/click tracking are enabled (the injected /__l5e script).
+- [x] Adopt audit-recommended protections — approved by Bobby 2026-11-21: strict-dynamic script policy, no-referrer meta tag, built-output guard script with AGENTS.md release-gate note. 79/79 tests pass, guard OK, preview verified; auditor supplement delivered. Live-host verification (injected script blocked, app and Ledger chunks load) is a standing step after the next publish.
+- [x] Publish-state decision — Bobby chose 2026-11-21 to keep the site live and public while the remaining audit items stay open; open H1/H2 risks are therefore live, not pending. Analytics toggle (project settings) and SEEDS-side link confirmation remain Bobby's actions.
 - [ ] Physical Ledger and complete live SEEDS sign-in verification — blocked: hardware and coordinated live request required; publication remains held.
 
 - [x] Re-copy SEEDS reference files and verify guide v3 vectors.

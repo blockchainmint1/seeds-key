@@ -9,7 +9,11 @@ export function securityPolicy(keyOrigin: string, nonce: string): string {
   if (!/^[A-Za-z0-9+/]{22}==$/.test(nonce)) throw new Error("Invalid script nonce.");
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    // strict-dynamic: only our nonced entry script (and what it imports, including the
+    // lazily loaded Ledger chunks) may run. Hosting-injected scripts without the nonce —
+    // e.g. the platform analytics tag — are blocked even though they are same-origin.
+    // 'self' remains as the fallback for browsers without strict-dynamic support.
+    `script-src 'nonce-${nonce}' 'strict-dynamic' 'self'`,
     "style-src 'self' 'unsafe-inline'",
     `connect-src 'self' ${seedsOrigins(keyOrigin).join(" ")}`,
     "font-src 'self'",
