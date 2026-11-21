@@ -1,3 +1,4 @@
+import lockup from "@/assets/logo/seeds-lockup-full.png.asset.json";
 import { Link } from "@tanstack/react-router";
 
 export function SiteFooter() {
@@ -25,8 +26,10 @@ export function Page({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="mx-auto flex w-full max-w-xl items-center gap-2 px-6 pt-8">
-        <span className="grid size-8 place-items-center rounded-full bg-primary font-display text-lg text-primary-foreground">S</span>
-        <Link to="/" className="font-display text-xl">Seeds Key</Link>
+        <Link to="/" className="flex items-center gap-3" aria-label="Seeds Key home">
+          <img src={lockup.url} alt="Seeds" width={1152} height={319} className="h-[34px] w-auto" />
+          <span className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">Key</span>
+        </Link>
       </header>
       <main className="mx-auto w-full max-w-xl flex-1 px-6 pt-10">{children}</main>
       <SiteFooter />

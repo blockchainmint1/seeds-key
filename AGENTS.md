@@ -35,3 +35,4 @@ use the editor.
 - Manifests are accepted only from the allow-list in `src/lib/seeds-key/manifest.ts`, and `submit_url` must share the manifest origin.
 - No third-party scripts, fonts or analytics; strict CSP is set in `src/server.ts` for the live host.
 - The live host `key.seeds.honest.money` must never change: wallet pockets are derived from it.
+- Brand fonts are self-hosted in public/fonts, never loaded from Google Fonts: the strict CSP and no-third-party rule forbid external font hosts.
