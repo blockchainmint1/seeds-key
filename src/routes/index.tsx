@@ -61,9 +61,9 @@ function Index() {
 function Welcome() {
   return (
     <div className="space-y-6">
-      <h1 className="text-5xl leading-tight">Your coin is your key.</h1>
+      <h1 className="text-5xl leading-tight">Your coin is your wallet. Do not lose it, ever.</h1>
       <p className="text-lg text-muted-foreground">
-        Seeds Key lets TXC, ISK and ZCU holders open a Seeds Exchange account with a Cold Storage Coin or their own wallet — no passwords, and your recovery phrase never leaves this device.
+        Seeds Key lets every coin holder open a Seeds Exchange account with a Cold Storage Coin or their own wallet — no passwords, and your recovery phrase never leaves this device.
       </p>
       <div className="panel p-5 text-sm text-muted-foreground">
         Start from <a className="text-primary underline" href="https://seeds.honest.money">seeds.honest.money</a> and choose “Start with a coin” or “Use my wallet”. Seeds will send you here.
