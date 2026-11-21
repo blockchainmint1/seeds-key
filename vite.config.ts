@@ -9,13 +9,31 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { fileURLToPath } from "node:url";
+import { ledgerBrowserAliases } from "./src/lib/seeds-key/ledger-browser-aliases";
+
+const browserAliases = ledgerBrowserAliases(fileURLToPath(new URL("./node_modules/", import.meta.url)));
 
 export default defineConfig({
   vite: {
-    resolve: { alias: [
-      { find: /^buffer\/?$/, replacement: fileURLToPath(new URL("./node_modules/buffer/index.js", import.meta.url)) },
-      { find: /^events\/?$/, replacement: fileURLToPath(new URL("./node_modules/events/events.js", import.meta.url)) },
-    ] },
+    plugins: [{
+      name: "ledger-browser-support", enforce: "pre",
+      config(config) {
+        config.resolve ??= {};
+        const existing = config.resolve.alias;
+        config.resolve.alias = [...browserAliases, ...(Array.isArray(existing) ? existing : Object.entries(existing ?? {}).map(([find, replacement]) => ({ find, replacement })))];
+      },
+      // Nitro adds node:* aliases later in config hooks, including buffer/index.js.
+      // Restore browser replacements after that merge, for both global and client resolution.
+      configResolved: {
+        order: "post",
+        handler(config) {
+          config.resolve.alias.unshift(...browserAliases);
+          const clientResolve = config.environments["client"]?.resolve as { alias?: typeof config.resolve.alias } | undefined;
+          const clientAliases = clientResolve?.alias;
+          if (clientAliases && clientAliases !== config.resolve.alias) clientAliases.unshift(...browserAliases);
+        },
+      },
+    }],
     optimizeDeps: { include: ["buffer/index.js", "events", "@ledgerhq/hw-app-eth", "@ledgerhq/hw-transport-webhid", "@ledgerhq/hw-transport-web-ble"] },
   },
   tanstackStart: {

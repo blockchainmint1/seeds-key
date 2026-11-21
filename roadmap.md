@@ -1,6 +1,7 @@
 # SEEDS compatibility update
 
 ## Ledger and approved audit follow-ups
+- [x] Repair reproduced live-site Ledger packaging configuration; 72 tests pass including final production alias resolution. Live correction remains blocked on independent review and an approved release; compiled deployment and physical hardware not verified.
 - [x] Add direct Ledger USB/Bluetooth Ethereum signing with device cleanup and unchanged SEEDS pocket derivation.
 - [x] Apply approved 60-second issued-at tolerance with strict expiry and separate local time errors; add exact SIWS field coverage.
 - [x] Run 70 regression tests and desktop/mobile browser checks; prepare a fresh auditor source packet.

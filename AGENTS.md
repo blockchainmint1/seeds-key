@@ -39,5 +39,5 @@ use the editor.
 - No third-party scripts, fonts or analytics; the server overwrites an internal nonce header and the isomorphic router factory reads it before SSR script initialization, while shared header helpers cover normal and error responses without preventing designated editor previews.
 - The live host `key.seeds.honest.money` must never change: wallet pockets are derived from it.
 - Brand fonts are self-hosted in public/fonts, never loaded from Google Fonts: the strict CSP and no-third-party rule forbid external font hosts.
-- Direct Ledger signing lives in seeds-key/ledger.ts and LedgerFlow; preload official SDKs only after Continue, use browser Buffer/events aliases, and never subscribe to SDK diagnostic logs because signatures must not be exposed.
+- Direct Ledger signing lives in seeds-key/ledger.ts and LedgerFlow; preload official SDKs only after Continue, restore Buffer/events browser aliases in a post configResolved hook after Nitro's node aliases (including explicit subpaths), and never subscribe to SDK diagnostic logs because signatures must not be exposed.
 - Ledger adapters reuse the existing EVM flow without rewriting signature bytes or wallet-pocket messages; transports close on completion, failure, cancellation and unmount, and abort signals prevent pending signatures from being posted after cancellation.
