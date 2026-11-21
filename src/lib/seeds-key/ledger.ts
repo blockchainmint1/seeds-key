@@ -130,6 +130,7 @@ export function explainLedgerError(error: unknown): string {
   const code = (error as { statusCode?: number } | null)?.statusCode;
   const name = error instanceof Error ? error.name : "";
   if (code === 0x6985 || /cancel|denied|NotFound/i.test(name)) return "Ledger approval was cancelled. Nothing was submitted; reconnect when you're ready.";
+  if (code === 0x650e) return "Unlock Ledger and open its Ethereum app, then try again. If the app is already open, close and reopen it. (Ledger error 0x650e.)";
   if ([0x6e00, 0x6d00, 0x6511, 0x650f].includes(code ?? 0)) return "Unlock Ledger and open its Ethereum app, then try again.";
   if (code === 0x5515) return "Unlock Ledger with your PIN and open its Ethereum app.";
   if (name === "SecurityError") return "Device access was blocked. Open the Seeds Key page directly in Chrome or Edge and try again.";

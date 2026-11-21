@@ -1,6 +1,7 @@
 # SEEDS compatibility update
 
 ## Ledger and approved audit follow-ups
+- [x] Replace reported Ledger 0x650e raw error with Ethereum-app recovery guidance; desktop USB/mobile Bluetooth before-and-after simulations verified, 78 tests pass; signing and publication unchanged.
 - [x] Review fourth-round Ledger audit against current code and loading-repair supplement; 72 tests pass, no application changes applied. Audit covers 7014e33, not the later 0d1d102 loading repair.
 - [x] Implement approved limited Ledger follow-ups: same-path recovery notice, adjacent signer display, older-browser cancellation/cleanup repair and globals documentation; 78 tests pass and desktop/mobile simulated flows verified; auditor supplement prepared. Transport migration and publication remain held.
 - [x] Repair reproduced live-site Ledger packaging configuration; 72 tests pass including final production alias resolution. Live correction remains blocked on independent review and an approved release; compiled deployment and physical hardware not verified.
