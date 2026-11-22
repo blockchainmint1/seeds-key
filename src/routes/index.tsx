@@ -96,7 +96,7 @@ function Welcome() {
         <ul className="mt-2 list-disc space-y-1 pl-6 text-muted-foreground">
           <li><a className="text-primary underline" href="https://vault.honest.money">HME Vault</a></li>
           <li><a className="text-primary underline" href="https://coldstoragecoins.com">Cold Storage Coin</a></li>
-          <li>Ledger (USB &amp; Bluetooth)</li>
+          <li><a className="text-primary underline" href="https://www.ledger.com">Ledger</a> (USB &amp; Bluetooth)</li>
         </ul>
       </div>
       <div className="panel p-5 text-sm text-muted-foreground">
