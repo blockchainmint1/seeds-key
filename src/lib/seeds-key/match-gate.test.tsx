@@ -46,3 +46,20 @@ it("rechecks expiration at Continue and does not allow wallet work on an expired
   if (walletButton) await act(async () => { fireEvent.click(walletButton); });
   expect(walletSignIn).not.toHaveBeenCalled();
 });
+
+it("offers Vault only when the manifest contains a signed-request field", async () => {
+  vi.spyOn(Route, "useSearch").mockReturnValue({ kind: "coin", r: requestUrl });
+  const Index = Route.options.component as ComponentType;
+  const view = render(<Index />);
+  fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+  expect(screen.queryByRole("button", { name: "Use HME Vault instead" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Open camera" })).toBeEnabled();
+  view.unmount();
+  const m = await vi.mocked(loadManifest)(requestUrl);
+  vi.mocked(loadManifest).mockResolvedValue({ ...m, vault_request: { v: 2, request_sig: "invalid-test-signature" } });
+  render(<Index />);
+  fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
+  fireEvent.click(screen.getByRole("button", { name: "Use HME Vault instead" }));
+  expect(screen.queryByRole("button", { name: /Scan the Vault/ })).toBeNull();
+  expect(screen.getByRole("alert")).toBeInTheDocument();
+});

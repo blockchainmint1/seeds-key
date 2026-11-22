@@ -27,7 +27,7 @@ export function VaultFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: 
     if (!request.text || !canvas.current) return;
     let closed = false;
     const c = canvas.current;
-    QRCode.toCanvas(c, request.text, { width: 300, margin: 2, errorCorrectionLevel: "M" })
+    QRCode.toCanvas(c, request.text, { width: 420, margin: 2, errorCorrectionLevel: "M" })
       .catch(() => { if (!closed) setErr("Couldn't draw the request QR. Try again."); });
     return () => { closed = true; c.getContext("2d")?.clearRect(0, 0, c.width, c.height); };
   }, [request]);
@@ -103,7 +103,7 @@ export function VaultFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: 
       <p className="text-muted-foreground">Seeds will be able to trade from pocket 1106 without asking you again. Your savings and recovery phrase stay on the Vault phone.</p>
       {request.text ? <>
         <p className="text-muted-foreground">Match code <strong className="font-mono text-primary">{pairingCode(m.challenge)}</strong> · pocket 1106 · all 16 chains</p>
-        <div className="flex justify-center"><canvas ref={canvas} aria-label="Seeds request for HME Vault" className="max-w-full rounded-lg bg-background" /></div>
+        <div className="flex justify-center"><canvas ref={canvas} aria-label="Seeds request for HME Vault" className="h-auto max-w-full rounded-lg bg-background" /></div>
         {scanning && <video ref={video} playsInline muted className="aspect-square w-full rounded-lg bg-muted object-cover" />}
         {scanning && progress && <p className="text-primary">Got {progress.have} of {progress.total} parts</p>}
         {busy ? <p className="text-primary">Sending your sealed trading pocket to Seeds…</p> : !scanning && <Button size="lg" className="w-full" onClick={() => {

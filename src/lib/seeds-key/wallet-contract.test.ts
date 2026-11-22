@@ -22,13 +22,13 @@ function personalSign(text: string): string {
 function fixture(): FullManifest {
   return {
     type: "seeds-key-signin", version: 1, domain: "seeds.honest.money", origin: "https://seeds.honest.money", app_name: "Seeds Exchange",
-    challenge_id: "a".repeat(32), challenge: "c".repeat(48), pairing_code: "673", key_host: "localhost:8080",
+    challenge_id: "a".repeat(32), challenge: "c".repeat(48), pairing_code: "673", key_host: "key.seeds.honest.money",
     recipient_pubkey: base64urlnopad.encode(x25519.getPublicKey(new Uint8Array(32).fill(3))),
     issued_at: new Date(Date.now() - 1000).toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(),
     submit_url: "https://seeds.honest.money/api/public/key-signin/submit", pocket: 1106,
   };
 }
-beforeEach(() => vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" } }));
+beforeEach(() => vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" } }));
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 it("the guide's deterministic personal-sign vector matches exactly", () => {
@@ -42,13 +42,13 @@ it("EVM signs the new host-bound handoff and returns a held change without succe
     const message = new TextDecoder().decode(hex.decode(String(params?.[0]).slice(2)));
     messages.push(message); return personalSign(message);
   });
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" }, ethereum: { request } });
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" }, ethereum: { request } });
   const fetcher = vi.fn().mockResolvedValue(Response.json({ signed_in: false, needs_confirm: true, pocket: 1106 }));
   vi.stubGlobal("fetch", fetcher);
   const identity = vi.fn();
   await expect(walletSignIn(fixture(), "evm", vi.fn(), identity)).resolves.toMatchObject({ signedIn: false, needsConfirm: true, pocket: 1106 });
   expect(messages).toHaveLength(3);
-  expect(messages[0]).toBe(walletPocketMessage("localhost:8080", "evm", EVM_ADDRESS));
+  expect(messages[0]).toBe(walletPocketMessage("key.seeds.honest.money", "evm", EVM_ADDRESS));
   expect(messages[1]).toBe(messages[0]);
   expect(messages[2]).toContain("Nonce: " + "c".repeat(48));
   expect(messages[2]).toContain("Resources:\n- https://seeds.honest.money\n- urn:seeds:pocket:1106");
@@ -62,7 +62,7 @@ it("EVM signs the new host-bound handoff and returns a held change without succe
 
 it("rejects a wrong host before opening any wallet", async () => {
   const request = vi.fn();
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" }, ethereum: { request } });
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" }, ethereum: { request } });
   await expect(walletSignIn({ ...fixture(), key_host: "evil.com" }, "evm", vi.fn())).rejects.toThrow();
   expect(request).not.toHaveBeenCalled();
 });
@@ -78,20 +78,20 @@ it("Phantom native sign-in is preferred for all three exact messages", async () 
     return { signedMessage: enc.encode(message), signature: ed25519.sign(enc.encode(message), SOL_KEY) };
   });
   const signMessage = vi.fn();
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" }, phantom: { solana: {
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" }, phantom: { solana: {
     connect: async () => ({ publicKey: { toBytes: () => ed25519.getPublicKey(SOL_KEY), toString: () => SOL_ADDRESS } }), signIn, signMessage,
   } } });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ signed_in: true, pocket: 1106, new_account: false })));
   await expect(walletSignIn(fixture(), "sol", vi.fn())).resolves.toMatchObject({ signedIn: true, pocket: 1106 });
   expect(signIn).toHaveBeenCalledTimes(3);
   expect(signMessage).not.toHaveBeenCalled();
-  expect(signIn.mock.calls[2]?.[0]).toMatchObject({ domain: "localhost:8080", address: SOL_ADDRESS, nonce: "c".repeat(48), resources: expect.arrayContaining(["urn:seeds:pocket:1106"]) });
+  expect(signIn.mock.calls[2]?.[0]).toMatchObject({ domain: "key.seeds.honest.money", address: SOL_ADDRESS, nonce: "c".repeat(48), resources: expect.arrayContaining(["urn:seeds:pocket:1106"]) });
 });
 
 it("Phantom formatting changes are discarded before the exact-text fallback", async () => {
   const signature = new Uint8Array(64).fill(9);
   const signMessage = vi.fn(async (bytes: Uint8Array) => ({ signature: ed25519.sign(bytes, SOL_KEY) }));
-  const message = walletPocketMessage("localhost:8080", "sol", SOL_ADDRESS);
+  const message = walletPocketMessage("key.seeds.honest.money", "sol", SOL_ADDRESS);
   const result = await signSolanaText({ signIn: async () => ({ signedMessage: enc.encode("different text"), signature }), signMessage }, message, vi.fn());
   expect(signature.every((byte) => byte === 0)).toBe(true);
   expect(signMessage).toHaveBeenCalledWith(enc.encode(message), "utf8");
@@ -99,7 +99,7 @@ it("Phantom formatting changes are discarded before the exact-text fallback", as
 });
 
 it("Phantom without signIn signs exact bytes through the fallback", async () => {
-  const message = walletPocketMessage("localhost:8080", "sol", SOL_ADDRESS);
+  const message = walletPocketMessage("key.seeds.honest.money", "sol", SOL_ADDRESS);
   const signMessage = vi.fn(async (bytes: Uint8Array) => ({ signature: ed25519.sign(bytes, SOL_KEY) }));
   const result = await signSolanaText({ signMessage }, message, vi.fn());
   expect(signMessage).toHaveBeenCalledWith(enc.encode(message), "utf8");

@@ -8,7 +8,7 @@
 
 [**key.seeds.honest.money**](https://key.seeds.honest.money) · [Seeds Exchange](https://seeds.honest.money) · [Honest Money](https://honest.money)
 
-![TXC](https://img.shields.io/badge/TXC-TEXITcoin-2f6b3a) ![ISK](https://img.shields.io/badge/ISK-network-2f6b3a) ![ZCU](https://img.shields.io/badge/ZCU-ZeroChill-2f6b3a) ![No trackers](https://img.shields.io/badge/trackers-none-informational) ![Tests](https://img.shields.io/badge/tests-91%20passing-success)
+![TXC](https://img.shields.io/badge/TXC-TEXITcoin-2f6b3a) ![ISK](https://img.shields.io/badge/ISK-network-2f6b3a) ![ZCU](https://img.shields.io/badge/ZCU-ZeroChill-2f6b3a) ![No trackers](https://img.shields.io/badge/trackers-none-informational)
 
 </div>
 
@@ -21,7 +21,7 @@ Seeds Key is the front door to Seeds Exchange for anyone who already holds hones
 | Sign in with | How |
 | --- | --- |
 | 🪙 **Cold Storage Coin** | Scan the recovery-phrase QR under the seal |
-| 🔐 **HME Vault** | Swap QR codes with your offline Vault phone, so the phrase never touches this computer |
+| 🔐 **HME Vault** · activation pending | Signed QR exchange with your offline Vault phone; requires the verified Seeds signer and matching Vault release |
 | 🦊 **Your wallet** | MetaMask, Rabby, Coinbase Wallet or Phantom |
 | 🔌 **Ledger** | Directly over USB or Bluetooth (Ethereum app) |
 
@@ -34,9 +34,11 @@ One sign-in sets up trading keys for **16 chain families**: TXC, ISK, Bitcoin, L
 - **Match codes.** A three-digit code on both screens stops someone else from hijacking your sign-in.
 - **Same pocket every time.** The same coin or wallet always rebuilds the same pocket, and your savings account is never touched.
 - **No trackers, no third-party scripts, no outside fonts.** A strict content security policy, and it only ever talks to Seeds.
-- **Independently audited.** Every release goes through a third-party security audit before it's published.
+- **Independent review required.** Changes must pass third-party security review before publication; hardware and coordinated sign-in checks remain release gates.
 
 > **Custody note:** once you link, Seeds holds the trading keys for pocket 1106 so it can trade instantly. Keep your savings in your own wallet.
+
+> **Revoking is not key rotation.** Re-linking uses the same pocket 1106 keys. If you suspect those keys were compromised, move funds to independently controlled keys and stop depositing into the old pocket.
 
 ## 🌍 Part of the Honest Money Ecosystem
 
@@ -52,12 +54,18 @@ Seeds Key is one tool in the **[Honest Money Ecosystem](https://honest.money)**.
 
 ## 🧑‍💻 For developers
 
+Verification baseline: **Bun 1.4.4**. Use this version to reproduce the documented checks; the dependency lockfile is committed.
+
 ```bash
 bun install --frozen-lockfile
 bun run dev                        # local preview
 bunx vitest run                    # full test suite, including published test vectors
 node scripts/check-built-assets.mjs # release guard: builds and checks the shipped files
 ```
+
+The tracked `src/routeTree.gen.ts` makes the first test run possible without a build. If an export omits it, run `bun run build` to regenerate it **before** testing. Do not hand-edit the generated file. The release guard already performs a production build; there is no need to build twice.
+
+See [verification and shared-source hashes](docs/verification.md), [Vault v2 coordination](docs/hme-vault-link.md), and [security scope and disclosure status](SECURITY.md). Designated test pages accept only preview Seeds, never live Seeds; do not use real recovery phrases there.
 
 Built with TanStack Start, React and Tailwind, and audited cryptography from [@noble](https://paulmillr.com/noble/) and [@scure](https://github.com/paulmillr/scure-base).
 
@@ -72,7 +80,9 @@ Built with TanStack Start, React and Tailwind, and audited cryptography from [@n
 
 ## 🔎 Security
 
-Found a problem? Please report it privately through [honest.money](https://honest.money) instead of opening a public issue.
+Found a problem? Read [SECURITY.md](SECURITY.md) before reporting. A dedicated private reporting destination still needs confirmation; do not post sensitive findings, recovery phrases or keys in public issues.
+
+Application source is [MIT licensed](LICENSE). The self-hosted fonts have separate SIL Open Font License notices: [Manrope](public/fonts/Manrope-OFL.txt) and [IBM Plex Mono](public/fonts/IBMPlexMono-OFL.txt). Asset-pointer storage IDs are public metadata, not credentials; preserve the pointers so logo delivery continues to work.
 
 ---
 

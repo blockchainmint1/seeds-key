@@ -9,10 +9,10 @@ const fixture = (): FullManifest => ({
   challenge_id: "a".repeat(32), challenge: "c".repeat(48),
   recipient_pubkey: base64urlnopad.encode(new Uint8Array(32).fill(1)),
   submit_url: "https://seeds.honest.money/api/public/key-signin/submit",
-  key_host: "localhost:8080", issued_at: new Date(Date.now() - 1000).toISOString(), pairing_code: "673",
+  key_host: "key.seeds.honest.money", issued_at: new Date(Date.now() - 1000).toISOString(), pairing_code: "673",
   expires_at: new Date(Date.now() + 60_000).toISOString(), pocket: 1106,
 });
-beforeEach(() => vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" } }));
+beforeEach(() => vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" } }));
 afterEach(() => vi.unstubAllGlobals());
 
 it("rejects expired coin requests before attempting phrase validation or derivation", async () => {
@@ -22,7 +22,7 @@ it("rejects expired coin requests before attempting phrase validation or derivat
 
 it("rejects expired wallet requests before opening a provider", async () => {
   const request = vi.fn(), step = vi.fn();
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080" }, ethereum: { request } });
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money" }, ethereum: { request } });
   const m = fixture(); m.expires_at = new Date(0).toISOString();
   await expect(walletSignIn(m, "evm", step)).rejects.toThrow(/expired/);
   expect(request).not.toHaveBeenCalled(); expect(step).not.toHaveBeenCalled();
@@ -30,7 +30,7 @@ it("rejects expired wallet requests before opening a provider", async () => {
 
 it("does not ask a provider to sign a wallet kind absent from the manifest", async () => {
   const request = vi.fn();
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080" }, ethereum: { request } });
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money" }, ethereum: { request } });
   await expect(walletSignIn({ ...fixture(), kinds: ["coin"] }, "evm", vi.fn())).rejects.toThrow(/doesn't allow/);
   expect(request).not.toHaveBeenCalled();
 });

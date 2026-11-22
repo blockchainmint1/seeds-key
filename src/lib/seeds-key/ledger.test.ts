@@ -12,7 +12,7 @@ const ADDRESS = "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23";
 const KEY = hex.decode("4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318");
 function fixture(): FullManifest {
   return { type: "seeds-key-signin", version: 1, domain: "seeds.honest.money", origin: "https://seeds.honest.money", app_name: "Seeds Exchange",
-    challenge_id: "a".repeat(32), challenge: "c".repeat(48), pairing_code: "673", key_host: "localhost:8080", pocket: 1106, kinds: ["evm"],
+    challenge_id: "a".repeat(32), challenge: "c".repeat(48), pairing_code: "673", key_host: "key.seeds.honest.money", pocket: 1106, kinds: ["evm"],
     issued_at: new Date(Date.now() - 1000).toISOString(), expires_at: new Date(Date.now() + 60_000).toISOString(),
     recipient_pubkey: base64urlnopad.encode(x25519.getPublicKey(new Uint8Array(32).fill(3))), submit_url: "https://seeds.honest.money/api/public/key-signin/submit" };
 }
@@ -32,7 +32,7 @@ function device() {
   return { prepared, close, remove, getAddress, signPersonalMessage, disconnect: () => disconnected?.() };
 }
 beforeEach(() => {
-  vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" }, isSecureContext: true });
+  vi.stubGlobal("window", { location: { origin: "https://key.seeds.honest.money", host: "key.seeds.honest.money" }, isSecureContext: true });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ signed_in: false, needs_confirm: true, pocket: 1106 })));
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -45,7 +45,7 @@ it.each(["hid", "ble"] as const)("%s confirms the address and signs three exact 
   expect(d.getAddress).toHaveBeenCalledWith("44'/60'/0'/0/0", true, false);
   expect(d.signPersonalMessage).toHaveBeenCalledTimes(3);
   const messages = d.signPersonalMessage.mock.calls.map((call) => new TextDecoder().decode(hex.decode(call[1])));
-  expect(messages[0]).toBe(walletPocketMessage("localhost:8080", "evm", ADDRESS));
+  expect(messages[0]).toBe(walletPocketMessage("key.seeds.honest.money", "evm", ADDRESS));
   expect(messages[1]).toBe(messages[0]); expect(messages[2]).toContain("Nonce: " + "c".repeat(48));
   expect(d.close).toHaveBeenCalledTimes(1); expect(d.remove).toHaveBeenCalledTimes(1);
   expect(fetch).toHaveBeenCalledTimes(1);

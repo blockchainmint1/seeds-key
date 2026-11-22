@@ -45,6 +45,14 @@ describe("signed Vault request policy", () => {
     const r = signedRequest();
     expect(() => readSignedVaultRequest(signedRequest({ issued_at: r.issued_at, expires_at: new Date(Date.parse(r.issued_at) + 600_001).toISOString() }), TEST_TRUST)).toThrow();
   });
+  it.each(["issued_at", "expires_at"])("requires exact UTC milliseconds for signed %s", (field) => {
+    const original = signedRequest();
+    const value = field === "issued_at" ? original.issued_at : original.expires_at;
+    const withoutMilliseconds = value.replace(/\.\d{3}Z$/, "Z");
+    expect(() => readSignedVaultRequest(signedRequest({ [field]: withoutMilliseconds }), TEST_TRUST)).toThrow();
+    expect(() => readSignedVaultRequest(signedRequest({ [field]: value.replace("Z", "+00:00") }), TEST_TRUST)).toThrow();
+    expect(readSignedVaultRequest(original, TEST_TRUST).pocket).toBe(1106);
+  });
   it("caps incoming request QR at 8192 characters", () => {
     expect(() => parseSignedVaultRequest(" ".repeat(8193), TEST_TRUST)).toThrow();
   });

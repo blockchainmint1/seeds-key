@@ -15,7 +15,7 @@ const fixture = (origin = SEEDS_ORIGIN, keyOrigin = LIVE_KEY_ORIGIN) => ({
   kinds: ["coin", "evm", "sol"],
   key_host: new URL(keyOrigin).host, issued_at: new Date(Date.now() - 1000).toISOString(), pairing_code: pairingCode("c".repeat(48)),
 });
-beforeEach(() => vi.stubGlobal("window", { location: { origin: "http://localhost:8080", host: "localhost:8080" } }));
+beforeEach(() => vi.stubGlobal("window", { location: { origin: LIVE_KEY_ORIGIN, host: new URL(LIVE_KEY_ORIGIN).host } }));
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("deployment trust boundaries", () => {
@@ -26,8 +26,24 @@ describe("deployment trust boundaries", () => {
   });
   it("only the designated Key preview and local development trust SEEDS preview", () => {
     expect(allowedManifestUrl(url(SEEDS_PREVIEW_ORIGIN).href, KEY_PREVIEW_ORIGIN)?.origin).toBe(SEEDS_PREVIEW_ORIGIN);
-    expect(seedsOrigins("http://localhost:8080")).toContain(SEEDS_PREVIEW_ORIGIN);
+    expect(seedsOrigins("http://localhost:8080")).toEqual([SEEDS_PREVIEW_ORIGIN]);
+    expect(seedsOrigins(KEY_PREVIEW_ORIGIN)).toEqual([SEEDS_PREVIEW_ORIGIN]);
     expect(allowedManifestUrl(url(SEEDS_PREVIEW_ORIGIN).href, "https://unexpected.lovable.app")).toBeNull();
+  });
+  it.each([KEY_PREVIEW_ORIGIN, "http://localhost:8080"])("%s rejects production before fetching a manifest", async (origin) => {
+    vi.stubGlobal("window", { location: { origin, host: new URL(origin).host } });
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect(allowedManifestUrl(url().href, origin)).toBeNull();
+    expect(() => checkManifest(url(), fixture(SEEDS_ORIGIN, origin), origin)).toThrow();
+    await expect(loadManifest(url().href)).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it.each([KEY_PREVIEW_ORIGIN, "http://localhost:8080"])("%s rechecks isolation before key work and POST", async (origin) => {
+    vi.stubGlobal("window", { location: { origin, host: new URL(origin).host } });
+    const build = vi.fn(), sign = vi.fn(), fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    const m = checkManifest(url(), fixture(), LIVE_KEY_ORIGIN);
+    await expect(submitWithRetry({ ...m, key_host: new URL(origin).host }, build, sign)).rejects.toThrow();
+    expect(build).not.toHaveBeenCalled(); expect(sign).not.toHaveBeenCalled(); expect(fetcher).not.toHaveBeenCalled();
   });
   it("rejects look-alike origins, credentials and non-protocol paths", () => {
     for (const address of [
@@ -77,7 +93,7 @@ describe("manifest identity and protocol validation", () => {
     }
   });
   it("keeps coin and wallet return choices on the verified origin", () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, "http://localhost:8080"), "http://localhost:8080");
+    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
     expect(seedsReturnUrl(m, "coin")).toBe(`${SEEDS_ORIGIN}/key-signin?kind=coin`);
     expect(seedsReturnUrl(m, "wallet")).toBe(`${SEEDS_ORIGIN}/key-signin?kind=wallet`);
     expect(() => seedsReturnUrl({ ...m, origin: "https://evil.com" }, "coin")).toThrow();
@@ -86,7 +102,7 @@ describe("manifest identity and protocol validation", () => {
 
 describe("fetch and handoff boundaries", () => {
   it("forbids redirects and cookies on manifest reads", async () => {
-    const fetcher = vi.fn().mockResolvedValue(Response.json(fixture(SEEDS_ORIGIN, "http://localhost:8080")));
+    const fetcher = vi.fn().mockResolvedValue(Response.json(fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN)));
     vi.stubGlobal("fetch", fetcher);
     const m = await loadManifest(url().href);
     expect(m.origin).toBe(SEEDS_ORIGIN);
@@ -100,7 +116,7 @@ describe("fetch and handoff boundaries", () => {
     expect(readSubmit(200, { pocket: 2105, signed_in: true, new_account: false })).toEqual({ ok: true, signedIn: true, pocket: 2105, newAccount: false });
   });
   it("does no key building or signing for an expired request", async () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, "http://localhost:8080"), "http://localhost:8080");
+    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
     m.expires_at = new Date(Date.now() - 1).toISOString();
     const build = vi.fn(), sign = vi.fn(), fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
@@ -109,7 +125,7 @@ describe("fetch and handoff boundaries", () => {
   });
   it("rechecks expiry after wallet approval before posting", async () => {
     vi.useFakeTimers();
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, "http://localhost:8080"), "http://localhost:8080");
+    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
     const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
     const sign = vi.fn().mockImplementation(async () => { vi.advanceTimersByTime(60_001); return "synthetic"; });
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
@@ -117,7 +133,7 @@ describe("fetch and handoff boundaries", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
   it("rebuilds only a validated retry pocket and posts without redirects or credentials", async () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, "http://localhost:8080"), "http://localhost:8080");
+    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
     const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
     const sign = vi.fn().mockResolvedValue("synthetic");
     const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ error: "use_pocket", account: 1107 }, { status: 409 }))
@@ -128,7 +144,7 @@ describe("fetch and handoff boundaries", () => {
     expect(fetcher).toHaveBeenCalledWith(m.submit_url, expect.objectContaining({ redirect: "error", credentials: "omit" }));
   });
   it("caps valid pocket retries at five without a sixth signing request", async () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, "http://localhost:8080"), "http://localhost:8080");
+    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
     const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
     const sign = vi.fn().mockResolvedValue("synthetic");
     vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => Response.json({ error: "use_pocket", account: 1107 }, { status: 409 })));

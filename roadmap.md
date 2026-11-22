@@ -9,8 +9,10 @@
 - Request safeguards: host binding, time checks, match code, Continue gate, held-change handling
 - Hardened delivery: strict-dynamic script policy, no-referrer meta, built-output guard script
 - Key-side Vault v2 request verification, bounded modern QR scans, timeout and abortable handoff; coordination instructions
+- Approved re-audit repairs: preview-only trust, unavailable Vault choice hidden, larger request QR, font notices and security/provenance/verifier docs; 145 tests and built-output guard pass
 
 ## Next
+- Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault
 - HME Vault "Link to Seeds" screen — built in the HME Vault project from docs/hme-vault-link.md, then a real-phone QR test
 - Physical Ledger verification across models, firmware and browsers

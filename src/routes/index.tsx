@@ -119,7 +119,7 @@ function CoinChoice({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Do
   return (
     <div className="space-y-6">
       {vault ? <VaultFlow m={m} onDone={onDone} onIdentity={onIdentity} /> : <CoinFlow m={m} onDone={onDone} onIdentity={onIdentity} />}
-      <Button variant="outline" className="w-full" onClick={() => setVault((v) => !v)}>{vault ? "Scan a Cold Storage Coin instead" : "Use HME Vault instead"}</Button>
+      {m.vault_request !== undefined && <Button variant="outline" className="w-full" onClick={() => setVault((v) => !v)}>{vault ? "Scan a Cold Storage Coin instead" : "Use HME Vault instead"}</Button>}
     </div>
   );
 }

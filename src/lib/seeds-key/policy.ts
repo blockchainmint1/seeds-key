@@ -11,9 +11,9 @@ export function isKeyPreview(origin: string, dev: boolean = import.meta.env.DEV)
   return origin === KEY_PREVIEW_ORIGIN || (dev && origin === LOCAL_DEV_ORIGIN);
 }
 
-/** Unknown hosts fail closed to production-only Seeds trust. */
+/** Designated previews are isolated from production; unknown hosts are production-only. */
 export function seedsOrigins(keyOrigin: string): readonly string[] {
-  return isKeyPreview(keyOrigin) ? [SEEDS_ORIGIN, SEEDS_PREVIEW_ORIGIN] : [SEEDS_ORIGIN];
+  return isKeyPreview(keyOrigin) ? [SEEDS_PREVIEW_ORIGIN] : [SEEDS_ORIGIN];
 }
 
 export function currentKeyOrigin(): string {
