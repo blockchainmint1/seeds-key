@@ -12,10 +12,12 @@ export const MAX_REQUEST_CHARS = 8192;
 export const SCAN_TIMEOUT_MS = 120_000;
 export type RequestTrust = Readonly<Record<string, string>>;
 
-// Intentionally unconfigured: SEEDS must provision a dedicated signing key, then
-// its independently verified PUBLIC key must be pinned here and in Vault.
-// No temporary/test key, QR-supplied key, or unsigned fallback is allowed.
-export const SEEDS_REQUEST_KEYS: RequestTrust = Object.freeze({});
+// SEEDS' PUBLIC request-signing key, verified 2026-11-22 against SEEDS' source,
+// its live endpoint and by the owner on his own phone (SHA-256 b81366bf…2163307c).
+// Never add a QR-supplied key or unsigned fallback.
+export const SEEDS_REQUEST_KEYS: RequestTrust = Object.freeze({
+  "seeds-vault-2026-11": "KuDdTWX-bDwxkSff2lULKVwvUS_Dfa0tZLy_iWefuxc",
+});
 
 export type SignedVaultRequest = {
   type: typeof VAULT_REQUEST;

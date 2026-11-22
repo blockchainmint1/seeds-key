@@ -8,8 +8,10 @@ import { buildVaultResponse } from "./vault-link-reference";
 import { signedRequest, TEST_TRUST } from "@/test/vault-fixture";
 
 describe("signed Vault request policy", () => {
-  it("production has no invented signing key and rejects the test signer", () => {
-    expect(Object.keys(SEEDS_REQUEST_KEYS)).toHaveLength(0);
+  it("production pins only the verified SEEDS key and rejects the test signer", () => {
+    expect(SEEDS_REQUEST_KEYS).toEqual({
+      "seeds-vault-2026-11": "KuDdTWX-bDwxkSff2lULKVwvUS_Dfa0tZLy_iWefuxc",
+    });
     expect(() => readSignedVaultRequest(signedRequest())).toThrow(/verified signing key/);
   });
   it("accepts the pinned signer for pocket 1106 and 16 chains", () => {
