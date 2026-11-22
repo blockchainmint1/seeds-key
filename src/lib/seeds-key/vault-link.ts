@@ -6,7 +6,7 @@
  *   Vault → Key  animated HMQR2 QR: VAULT_RESPONSE (sealed pocket keys + coin signature)
  *
  * The Vault signs as kind "coin" (TXC m/44'/696969'/0'/0/0), exactly like a
- * scanned coin, so Seeds needs no change. Everything here is re-checked
+ * scanned coin. Seeds must also sign the Vault request. Everything here is re-checked
  * against the request this page holds before anything is sent to Seeds.
  */
 import { secp256k1 } from "@noble/curves/secp256k1.js";
@@ -16,18 +16,20 @@ import { base64, base64urlnopad, createBase58check } from "@scure/base";
 import { keySigninMessage, normalizeIdentity, shortKeyName } from "@/lib/key-signin/rules";
 import { POCKET_COINS, accountPath, type PocketCoin } from "@/lib/pockets/coins";
 import { readSubmit, validateActiveManifest, type FullManifest, type HandoffResult } from "./manifest";
+import { VAULT_RESPONSE, MAX_RESPONSE_CHARS, readSignedVaultRequest, type RequestTrust, SEEDS_REQUEST_KEYS } from "./vault-protocol";
 
-export const VAULT_REQUEST = "hm-seeds-key-vault-request";
-export const VAULT_RESPONSE = "hm-seeds-key-vault-response";
-export const MAX_RESPONSE_CHARS = 64 * 1024;
+export { VAULT_REQUEST, VAULT_RESPONSE, MAX_RESPONSE_CHARS } from "./vault-protocol";
 
-/** What the Vault needs to build the hand-off. No secrets: this QR is public. */
-export function vaultRequestText(m: FullManifest): string {
-  return JSON.stringify({
-    type: VAULT_REQUEST, v: 1, app_name: m.app_name, domain: m.domain, key_host: m.key_host,
-    challenge_id: m.challenge_id, challenge: m.challenge, recipient_pubkey: m.recipient_pubkey,
-    pocket: m.pocket, issued_at: m.issued_at, expires_at: m.expires_at,
-  });
+/** No private keys, but contains a live sign-in capability: do not share this QR. */
+export function vaultRequestText(m: FullManifest, trust: RequestTrust = SEEDS_REQUEST_KEYS): string {
+  validateActiveManifest(m);
+  if (m.kinds && !m.kinds.includes("coin")) throw new Error("This request doesn't allow coin sign-in.");
+  if (m.vault_request === undefined) throw new Error("Vault linking is waiting for Seeds' signed requests. Use your coin or wallet instead.");
+  const r = readSignedVaultRequest(m.vault_request, trust);
+  for (const field of ["domain", "key_host", "challenge_id", "challenge", "recipient_pubkey", "pocket", "issued_at", "expires_at"] as const) {
+    if (r[field] !== m[field]) throw new Error("The signed Vault request doesn't match this Seeds sign-in. Start again.");
+  }
+  return JSON.stringify(r);
 }
 
 export type VaultHandoff = { message: string; signature: string; body: Record<string, unknown>; identity: string };
@@ -43,10 +45,11 @@ function cat(...p: Uint8Array[]) { const o = new Uint8Array(p.reduce((s, x) => s
 export function txcSignatureMatches(address: string, message: string, signatureB64: string): boolean {
   try {
     const raw = base64.decode(signatureB64);
-    if (raw.length !== 65 || raw[0]! < 31 || raw[0]! > 34) return false;
+    const header = raw[0];
+    if (raw.length !== 65 || header === undefined || header < 31 || header > 34) return false;
     const pfx = enc.encode("Bitcoin Signed Message:\n"), msg = enc.encode(message);
     const h = sha256(sha256(cat(varint(pfx.length), pfx, varint(msg.length), msg)));
-    const sig = secp256k1.Signature.fromBytes(cat(Uint8Array.of(raw[0]! - 31), raw.slice(1)), "recovered");
+    const sig = secp256k1.Signature.fromBytes(cat(Uint8Array.of(header - 31), raw.slice(1)), "recovered");
     const pub = sig.recoverPublicKey(h).toBytes(true);
     return b58c.encode(cat(Uint8Array.of(66), ripemd160(sha256(pub)))) === address;
   } catch { return false; }
@@ -57,7 +60,7 @@ export function readVaultResponse(text: string, m: FullManifest): VaultHandoff {
   if (text.length > MAX_RESPONSE_CHARS) throw new Error(BAD);
   let r: Record<string, unknown>;
   try { r = JSON.parse(text) as Record<string, unknown>; } catch { throw new Error(BAD); }
-  if (!r || typeof r !== "object" || r["type"] !== VAULT_RESPONSE || r["v"] !== 1) throw new Error(BAD);
+  if (!r || typeof r !== "object" || Array.isArray(r) || r["type"] !== VAULT_RESPONSE || r["v"] !== 2) throw new Error(BAD);
   const body = r["body"] as Record<string, unknown> | undefined;
   const message = r["message"], signature = r["signature"];
   if (!body || typeof body !== "object" || typeof message !== "string" || typeof signature !== "string") throw new Error(BAD);
@@ -94,14 +97,22 @@ export function readVaultResponse(text: string, m: FullManifest): VaultHandoff {
 export const vaultSignerName = (h: VaultHandoff) => shortKeyName("coin", h.identity);
 
 /** One POST — the Vault can't re-sign without another QR round, so a pocket change means starting again. */
-export async function submitVaultHandoff(m: FullManifest, h: VaultHandoff): Promise<HandoffResult> {
+export async function submitVaultHandoff(m: FullManifest, h: VaultHandoff, signal?: AbortSignal): Promise<HandoffResult> {
+  signal?.throwIfAborted();
+  vaultRequestText(m);
   validateActiveManifest(m);
+  // Re-check the answer immediately before POST, not merely at camera decode time.
+  const checked = readVaultResponse(JSON.stringify({ type: VAULT_RESPONSE, v: 2, challenge_id: m.challenge_id, ...h }), m);
+  signal?.throwIfAborted();
   const res = await fetch(m.submit_url, {
     method: "POST", credentials: "omit", redirect: "error", cache: "no-store",
+    ...(signal ? { signal } : {}),
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...h.body, message: h.message, signature: h.signature }),
+    body: JSON.stringify({ ...checked.body, message: checked.message, signature: checked.signature }),
   });
+  signal?.throwIfAborted();
   const r = readSubmit(res.status, await res.json().catch(() => ({})));
+  signal?.throwIfAborted();
   if (r.ok) return r;
   if ("usePocket" in r) throw new Error(`Seeds asked for pocket ${r.usePocket}. Start again on Seeds and scan the new request on the Vault.`);
   throw new Error(r.error);

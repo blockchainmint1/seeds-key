@@ -8,8 +8,10 @@
 - Always-pocket-1106 sync with SEEDS (shared rules re-copied verbatim)
 - Request safeguards: host binding, time checks, match code, Continue gate, held-change handling
 - Hardened delivery: strict-dynamic script policy, no-referrer meta, built-output guard script
+- Key-side Vault v2 request verification, bounded modern QR scans, timeout and abortable handoff; coordination instructions
 
 ## Next
+- Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault
 - HME Vault "Link to Seeds" screen — built in the HME Vault project from docs/hme-vault-link.md, then a real-phone QR test
 - Physical Ledger verification across models, firmware and browsers
 - Complete live SEEDS sign-in and physical coin scan with a coordinated test request

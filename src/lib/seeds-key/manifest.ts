@@ -4,7 +4,7 @@ import { isKeyKind, pairingCode, KEY_REQUEST_TTL_MS, type KeyKind } from "@/lib/
 import { validPocket } from "@/lib/pockets/coins";
 import { currentKeyOrigin, SEEDS_PREVIEW_ORIGIN, seedsOrigins } from "./policy";
 
-export type FullManifest = KeyManifest & { app_name: string; origin: string; kinds?: KeyKind[]; pairing_code: string };
+export type FullManifest = KeyManifest & { app_name: string; origin: string; kinds?: KeyKind[]; pairing_code: string; vault_request?: unknown };
 const MANIFEST_PATH = /^\/api\/public\/key-signin\/manifest\/([a-f0-9]{32})$/;
 const EXPIRED = "This sign-in was already used or ran out. If you didn't finish it yourself, someone else may have used your code — on Seeds, tap \"No, that's not mine\" and start again.";
 const LOCAL_EXPIRED = "This sign-in request has expired. Check your device clock and start again on Seeds.";
@@ -69,6 +69,7 @@ export function checkManifest(url: URL, m: unknown, keyOrigin = currentKeyOrigin
     key_host: keyHost, issued_at: issued, pairing_code: code,
     app_name: url.origin === SEEDS_PREVIEW_ORIGIN ? "Seeds Exchange (preview)" : "Seeds Exchange",
     origin: url.origin,
+    ...(x["vault_request"] !== undefined ? { vault_request: x["vault_request"] } : {}),
     ...(Array.isArray(kinds) ? { kinds: kinds.filter(isKeyKind) } : {}),
   };
 }
