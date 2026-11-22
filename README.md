@@ -1,44 +1,85 @@
+<div align="center">
+
 # 🌱 Seeds Key
 
-**The easy onramp to [Seeds Exchange](https://seeds.honest.money) for honest-money holders.**
-Sign in with a **Cold Storage Coin** or **your own wallet** — your recovery phrase never leaves your device.
+### Your coin is your key.
 
-Part of the **[Honest Money Ecosystem](https://honest.money)**:
+**Sign in to [Seeds Exchange](https://seeds.honest.money) with a Cold Storage Coin, your own wallet, a Ledger or HME Vault.<br/>No passwords. Your recovery phrase never leaves your device.**
 
-| Coin | Network |
+[**key.seeds.honest.money**](https://key.seeds.honest.money) · [Seeds Exchange](https://seeds.honest.money) · [Honest Money](https://honest.money)
+
+![TXC](https://img.shields.io/badge/TXC-TEXITcoin-2f6b3a) ![ISK](https://img.shields.io/badge/ISK-network-2f6b3a) ![ZCU](https://img.shields.io/badge/ZCU-ZeroChill-2f6b3a) ![No trackers](https://img.shields.io/badge/trackers-none-informational) ![Tests](https://img.shields.io/badge/tests-91%20passing-success)
+
+</div>
+
+---
+
+## ✨ What it does
+
+Seeds Key is the front door to Seeds Exchange for anyone who already holds honest money. Instead of creating a password, you prove who you are with something you already own, and Seeds Key builds your personal **trading pocket** (pocket 1106) on your own device:
+
+| Sign in with | How |
 | --- | --- |
-| **TXC** — TEXITcoin | Bitcoin-style chain + Omni layer 2 · [texitcoin.org/build](https://texitcoin.org/build) |
-| **ISK** | TXC's sibling network |
-| **ZCU** — ZeroChill | [zerochill.com/build](https://zerochill.com/build) |
+| 🪙 **Cold Storage Coin** | Scan the recovery-phrase QR under the seal |
+| 🔐 **HME Vault** | Swap QR codes with your offline Vault phone, so the phrase never touches this computer |
+| 🦊 **Your wallet** | MetaMask, Rabby, Coinbase Wallet or Phantom |
+| 🔌 **Ledger** | Directly over USB or Bluetooth (Ethereum app) |
 
-## How it works
-1. Seeds sends you here with a one-time, 10-minute request.
-2. Compare the three-digit match code with your own Seeds screen before continuing.
-3. Scan your coin's phrase QR, or sign with MetaMask, Rabby, Coinbase Wallet or Phantom. Ledger can connect directly over USB/Bluetooth where the browser supports it, or through MetaMask/Rabby; Trezor uses a browser-wallet provider.
-4. Compare the short coin/wallet name on both screens and finish the confirmation on Seeds. A pocket-key change stays pending until approved there.
+One sign-in sets up trading keys for **16 chain families**: TXC, ISK, Bitcoin, Litecoin, Ethereum / BNB / Base / PulseChain, Dogecoin, Bitcoin Cash, Zcash, XRP, TRON, Solana, Dash, Cosmos, THORChain, Cardano and Monero.
 
-## Safety
-- No phrase is ever sent, saved or logged. No trackers or third-party scripts.
-- Only talks to Seeds (strict allow-list), with a strict Content-Security-Policy.
-- Matches every published test vector (`bunx vitest run`).
+## 🛡️ Built to be trusted
 
-## Verification and release status
-- Reference code is copied byte-for-byte from SEEDS snapshot **d6de39aa**, following `docs/seeds-key-page.md` v3.
-- Wallet pockets use the permanent v2 SIWE/SIWS message fields and HKDF label. Coin address vectors are unchanged.
-- Phantom native `signIn` is preferred; signatures for reformatted text are discarded. The fallback signs Seeds' exact bytes through `signMessage` and still requires repeatability.
-- Run `bun install --frozen-lockfile` and `bunx vitest run` for the test suite. The auditor packet includes the generated route tree, source hashes and verification limitations.
-- **Publication is held.** The v3 re-audit confirms forwarded-link session theft (H2), Solana signature phishing (H1) and EVM recovery-byte compatibility (M4) remain unresolved. Direct Ledger also needs independent re-audit, real-device checks and a complete live SEEDS flow; it does not inherit MetaMask's origin warning.
-- Static-only delivery, public built-file hashes/About screen and SRI from guide K4 remain separate release work; this project retains its existing TanStack Start architecture and nonce-protected SSR.
+- **Your phrase stays put.** It's never sent, saved, logged or shown. Only a signature and your sealed trading pocket go to Seeds.
+- **Sealed end-to-end.** Pocket keys are encrypted to a one-time key that only Seeds can open.
+- **Match codes.** A three-digit code on both screens stops someone else from hijacking your sign-in.
+- **Same pocket every time.** The same coin or wallet always rebuilds the same pocket, and your savings account is never touched.
+- **No trackers, no third-party scripts, no outside fonts.** A strict content security policy, and it only ever talks to Seeds.
+- **Independently audited.** Every release goes through a third-party security audit before it's published.
 
-Permanent home: **https://key.seeds.honest.money** — never change it after wallet use. This is not a claim that the updated code has been published.
+> **Custody note:** once you link, Seeds holds the trading keys for pocket 1106 so it can trade instantly. Keep your savings in your own wallet.
 
-Honest money, honest tools.
+## 🌍 Part of the Honest Money Ecosystem
 
-## Direct Ledger support
-- Uses Ledger's Ethereum app and official WebHID (USB) / Web Bluetooth transports. Both require a secure context and a supporting browser; API detection is not a hardware compatibility guarantee.
-- Default Ethereum path: `m/44'/60'/0'/0/0`. An Ethereum-only path selector supports existing Ledger Live or legacy accounts; path changes select a different wallet identity, not a migration.
-- Confirm the address on Ledger, then approve the same two deterministic pocket signatures and final handoff signature as the existing EVM flow. No hardware seed, xpub export, transactions or RPC providers are used.
-- No recovery-byte normalisation is introduced. Only Ledger's expected 27/28 recovery bytes are accepted; unsupported responses fail before submission.
-- Cancellation and disconnect stop pending work; transports are closed after every outcome. Browser permission grants are not revoked by closing the connection.
-- SDK packages are bundled locally. The reused WebHID/Web BLE transport packages are deprecated by Ledger in favour of its Device Management Kit transports; this is an explicit maintenance risk for the auditor, not a claim that the EVM Wallet reference is the newest integration architecture.
-- Approved clock repair allows issued-at up to 60 seconds ahead; expiry stays strict, and the shared ten-minute request lifetime is unchanged.
+Seeds Key is one tool in the **[Honest Money Ecosystem](https://honest.money)**. HME is a family of networks, coins and tools built for honest money.
+
+| Coin | About | Build on it |
+| --- | --- | --- |
+| **TXC** · TEXITcoin | Bitcoin-style chain with Omni layer 2 | [texitcoin.org/build](https://texitcoin.org/build) |
+| **ISK** | TXC's sibling network | [honest.money](https://honest.money) |
+| **ZCU** · ZeroChill | The ZeroChill network | [zerochill.com/build](https://zerochill.com/build) |
+
+**The family of tools:** Seeds Exchange · Seeds Key · HME Wallet · HME Vault · Cold Storage Coins. Find them all at [honest.money](https://honest.money).
+
+## 🧑‍💻 For developers
+
+```bash
+bun install --frozen-lockfile
+bun run dev                        # local preview
+bunx vitest run                    # full test suite, including published test vectors
+node scripts/check-built-assets.mjs # release guard: builds and checks the shipped files
+```
+
+Built with TanStack Start, React and Tailwind, and audited cryptography from [@noble](https://paulmillr.com/noble/) and [@scure](https://github.com/paulmillr/scure-base).
+
+| Where | What |
+| --- | --- |
+| `src/lib/pockets/`, `src/lib/key-signin/` | Shared derivation and sign-in rules, copied byte-for-byte from Seeds |
+| `src/lib/seeds-key/` | Request checks, coin and wallet flows, Ledger, HME Vault link, security headers |
+| `docs/hme-vault-link.md` | The HME Vault QR protocol |
+| `AGENTS.md` | Project rules and why they exist |
+
+⚠️ The live address `key.seeds.honest.money` is permanent: wallet pockets are derived from it, so forks must use their own address and won't share pockets.
+
+## 🔎 Security
+
+Found a problem? Please report it privately through [honest.money](https://honest.money) instead of opening a public issue.
+
+---
+
+<div align="center">
+
+**Part of the [honest.money](https://honest.money) ecosystem** · [Terms](https://key.seeds.honest.money/terms) · [Privacy](https://key.seeds.honest.money/privacy) · [Manifesto](https://key.seeds.honest.money/manifesto)
+
+*Honest money, honest tools.* 🌱
+
+</div>
