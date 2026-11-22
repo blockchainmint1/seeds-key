@@ -91,6 +91,14 @@ function Welcome() {
       <p className="text-lg text-muted-foreground">
         Seeds Key lets traders open a Seeds Exchange account with a Cold Storage Coin or their own wallet — no passwords, and your recovery phrase never leaves this device.
       </p>
+      <div>
+        <h2 className="text-xl">Supported methods</h2>
+        <ul className="mt-2 list-disc space-y-1 pl-6 text-muted-foreground">
+          <li><a className="text-primary underline" href="https://honest.money">HME Vault</a></li>
+          <li><a className="text-primary underline" href="https://honest.money">Cold Storage Coin</a></li>
+          <li>Ledger (USB &amp; Bluetooth)</li>
+        </ul>
+      </div>
       <div className="panel p-5 text-sm text-muted-foreground">
         Start from <a className="text-primary underline" href="https://seeds.honest.money">seeds.honest.money</a> and choose “Start with a coin” or “Use my wallet”. Seeds will send you here.
       </div>
