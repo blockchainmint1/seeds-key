@@ -21,7 +21,6 @@ export const Route = createFileRoute("/privacy")({
   component: () => (
     <Page>
       <article className="animate-sprout space-y-4 pb-10 leading-relaxed text-muted-foreground [&_h1]:text-4xl [&_h1]:text-foreground [&_h2]:pt-4 [&_h2]:text-xl [&_h2]:text-foreground">
-        <p className="text-xs uppercase tracking-widest text-primary">Draft — pending review</p>
         <h1>Privacy</h1>
         <p>
           Your recovery phrase never leaves your device. It is turned into a sign-in signature and
