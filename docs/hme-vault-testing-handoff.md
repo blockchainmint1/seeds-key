@@ -30,7 +30,9 @@ Use these Key files as interoperability references:
 - `src/lib/pockets/*`
 - `docs/hme-vault-link.md`
 
-**Do not copy the response reference blindly.** Its `buildVaultResponse(req, words)` does not carry Vault’s stored BIP39 passphrase or enforce hands-off restrictions. Build a reviewed Vault adapter that does both. Preserve the shared SEEDS derivation/message contract; do not edit verbatim upstream copies locally. Do not replace Vault’s existing Noble 1.9.7 dependencies with Key’s 2.x dependencies as part of this task—adapt APIs in Vault-owned code and prove byte compatibility with tests.
+**Do not copy the response reference blindly.** Its `buildVaultResponse(req, words)` does not carry Vault’s stored BIP39 passphrase or enforce hands-off restrictions. The passphrase gap is fixed upstream, not in Vault: ask SEEDS to add an optional `passphrase` parameter to `coinIdentityKey` and `buildHandoff` (defaulting to the empty string so coin and wallet flows are unchanged), then re-copy the updated reference files verbatim and have Vault call them. Vault must not write its own passphrase-aware identity or pocket derivation—that would fork the most sensitive code in the system. Hands-off enforcement stays a reviewed Vault adapter at the export boundary.
+
+**Dependency decision (replaces the earlier “keep Noble 1.9.7” instruction):** the verbatim copies import `@noble/curves/ed25519.js`, `@noble/hashes/hkdf.js` and `@noble/hashes/legacy.js` and call the 2.x signing API (`secp256k1.sign(..., { prehash: false, format: "recovered" })`). Those do not resolve or compile against Noble 1.x, so Vault upgrades to the same pinned 2.x set Key uses: `@noble/curves` 2.2.0, `@noble/hashes` 2.x, `@scure/base` 2.x, `@scure/bip32` 2.x, `@scure/bip39` 2.x. This keeps the copies genuinely verbatim and makes the cross-project vector tests meaningful. Prove byte compatibility with the known-vector tests either way.
 
 ### 2. Build the owner-approved screen
 
@@ -60,24 +62,24 @@ Use the selected seed’s **stored optional BIP39 passphrase** consistently for 
 
 The ordered v2 contract is:
 
-| Order | Key family | Delegated path |
-|---:|---|---|
-| 1 | TXC | `m/44'/696969'/1106'` |
-| 2 | ISK | `m/44'/969696'/1106'` |
-| 3 | BTC | `m/84'/0'/1106'` |
-| 4 | LTC | `m/44'/2'/1106'` |
-| 5 | EVM | `m/44'/60'/1106'` |
-| 6 | DOGE | `m/44'/3'/1106'` |
-| 7 | BCH | `m/44'/145'/1106'` |
-| 8 | ZEC | `m/44'/133'/1106'` |
-| 9 | XRP | `m/44'/144'/1106'` |
-| 10 | TRX | `m/44'/195'/1106'` |
-| 11 | SOL | `m/44'/501'/1106'/0'` |
-| 12 | DASH | `m/44'/5'/1106'` |
-| 13 | ATOM | `m/44'/118'/1106'` |
-| 14 | RUNE | `m/44'/931'/1106'` |
-| 15 | ADA | `m/1852'/1815'/1106'` |
-| 16 | XMR | `m/44'/128'/1106'` |
+| Order | Key family | Delegated path        |
+| ----: | ---------- | --------------------- |
+|     1 | TXC        | `m/44'/696969'/1106'` |
+|     2 | ISK        | `m/44'/969696'/1106'` |
+|     3 | BTC        | `m/84'/0'/1106'`      |
+|     4 | LTC        | `m/44'/2'/1106'`      |
+|     5 | EVM        | `m/44'/60'/1106'`     |
+|     6 | DOGE       | `m/44'/3'/1106'`      |
+|     7 | BCH        | `m/44'/145'/1106'`    |
+|     8 | ZEC        | `m/44'/133'/1106'`    |
+|     9 | XRP        | `m/44'/144'/1106'`    |
+|    10 | TRX        | `m/44'/195'/1106'`    |
+|    11 | SOL        | `m/44'/501'/1106'/0'` |
+|    12 | DASH       | `m/44'/5'/1106'`      |
+|    13 | ATOM       | `m/44'/118'/1106'`    |
+|    14 | RUNE       | `m/44'/931'/1106'`    |
+|    15 | ADA        | `m/1852'/1815'/1106'` |
+|    16 | XMR        | `m/44'/128'/1106'`    |
 
 Do not filter this list to Vault’s supported-payment coins, omit a family, reorder it or add a seventeenth family without a coordinated protocol update. Export compatibility does **not** mean every family has working SEEDS spending support.
 
@@ -88,7 +90,7 @@ Preserve the existing formats:
 - ADA: hex 96-byte account extended private key (`kL || kR || chain code`) and hex 64-byte public key (`A || chain code`).
 - XMR: hex 32-byte SLIP-0010 seed key using SEEDS’ Trezor-compatible Monero derivation, paired with the Monero primary address—not a BIP32 xpriv or Ledger-style Monero wallet.
 
-Seal `JSON.stringify(xprvs)` to the **verified request’s** X25519 recipient using the unchanged `hm-link-delegate v1` format: ephemeral public key (32 bytes), nonce (12 bytes), AES-256-GCM ciphertext and tag. Keep the existing HKDF-SHA256 inputs and exact TXC sign-in message.
+Seal `JSON.stringify(xprvs)` to the **verified request’s** X25519 recipient using the unchanged `hm-link-delegate v1` format: ephemeral public key (32 bytes), nonce (12 bytes), AES-256-GCM ciphertext and tag. Keep the existing HKDF-SHA256 inputs and exact TXC sign-in message. Reject low-order recipients by the RFC 7748 §6.1 method: abort when the computed X25519 shared secret is all zeros—this catches every low-order point without a point list.
 
 Sign locally with the selected seed’s TXC identity at **`m/44'/696969'/0'/0/0`**. This account-0 key is used only to sign; **no account-0 private key is exported**. The public identity address and its signature are part of the intended handoff; neither belongs in diagnostics.
 
@@ -135,10 +137,20 @@ The ordinary Ed25519 signature covers UTF-8 of exactly:
 
 ```ts
 JSON.stringify([
-  "HME Seeds Vault request", type, v, signing_key_id,
-  domain, key_host, challenge_id, challenge, recipient_pubkey,
-  pocket, issued_at, expires_at, paths,
-])
+  "HME Seeds Vault request",
+  type,
+  v,
+  signing_key_id,
+  domain,
+  key_host,
+  challenge_id,
+  challenge,
+  recipient_pubkey,
+  pocket,
+  issued_at,
+  expires_at,
+  paths,
+]);
 ```
 
 No BOM, added whitespace, trailing newline, prehash or changed tuple order. Signature encoding is unpadded canonical base64url (64 decoded bytes). Timestamps must exactly round-trip through `Date.toISOString()`, including three millisecond digits and uppercase `Z`. Maximum request lifetime is **600,000 ms**; issuance may be at most **60,000 ms** ahead of the Vault clock; expiry must be strictly in the future. Wrong clocks require correction, not an override. Request text is capped at **8,192 characters**.
@@ -166,7 +178,7 @@ After independent review and explicit authorization for any required deployment:
 2. Start a fresh sign-in yourself at **`https://seeds.honest.money`**, open **`https://key.seeds.honest.money`**, compare the code and press Continue.
 3. Scan Key’s request on Vault, review the seed/pocket/authority warning, and approve.
 4. Scan Vault’s animated answer on Key. Confirm SEEDS’ final confirmation/held-change state is respected, and verify the linked pocket and expected public addresses read back in SEEDS.
-5. Repeat with a passphrase-protected disposable seed and exercise cancellation, expiry and wrong-clock failures on the actual phone.
+5. Repeat with a passphrase-protected disposable seed—including one with a non-ASCII passphrase so NFKD normalisation is exercised on the phone, not only in unit tests—and exercise cancellation, expiry and wrong-clock failures on the actual phone.
 
 **Do not route real keys through editor previews.** Designated Key previews/localhost trust only preview SEEDS, whereas Vault v2 is live-host-only; relaxing either policy is not an acceptable test shortcut. Offline fixtures and dummy-seed automated tests can proceed before production activation, but they are not proof of a completed live link.
 
@@ -174,7 +186,7 @@ After independent review and explicit authorization for any required deployment:
 
 - Vault source commit and a concise list of completed changes and remaining blockers.
 - Test commands, actual counts/results and cross-project vector/decryption evidence, excluding private test material from the report.
-- A reviewed APK and instructions to obtain/install it, with zero-network-permission inspection evidence and supported device/build details.
+- A reviewed APK and instructions to obtain/install it, with zero-network-permission inspection evidence and supported device/build details. Include SHA-256 hashes of the APK’s bundled JavaScript assets so the review can confirm the installed app is the audited code, the same way Key’s live assets are matched to its source build.
 - A shareable independent-audit source packet: source/configuration, lockfile, generated routes, license notices and source hashes; exclude repository metadata, dependencies, build output, environment files and private review notes.
 - Screenshots of the new warning/confirmation and QR screens using dummy data only; no real sign-in QR or recoverable secrets.
 - Public signer handoff status, coordinated phone-test results, and clear separation of “implemented,” “locally tested,” “phone tested” and “live sign-in verified.”

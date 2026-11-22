@@ -1,8 +1,10 @@
 /** Public deployment identities, never key-derivation inputs. */
 export const LIVE_KEY_ORIGIN = "https://key.seeds.honest.money";
-export const KEY_PREVIEW_ORIGIN = "https://id-preview--73bea008-b73f-48d4-9f72-8c26ed9d32ff.lovable.app";
+export const KEY_PREVIEW_ORIGIN =
+  "https://id-preview--73bea008-b73f-48d4-9f72-8c26ed9d32ff.lovable.app";
 export const SEEDS_ORIGIN = "https://seeds.honest.money";
-export const SEEDS_PREVIEW_ORIGIN = "https://id-preview--0ce4bcf5-5883-4de0-96d3-b161585d1bf4.lovable.app";
+export const SEEDS_PREVIEW_ORIGIN =
+  "https://id-preview--0ce4bcf5-5883-4de0-96d3-b161585d1bf4.lovable.app";
 
 export const LOCAL_DEV_ORIGIN = "http://localhost:8080";
 

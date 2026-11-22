@@ -4,28 +4,34 @@
 
 /* Brand fonts, self-hosted (no third-party requests). */
 @font-face {
-  font-family: 'IBM Plex Mono';
+  font-family: "IBM Plex Mono";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/IBMPlexMono-400.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("/fonts/IBMPlexMono-400.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'IBM Plex Mono';
+  font-family: "IBM Plex Mono";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/IBMPlexMono-500.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("/fonts/IBMPlexMono-500.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Manrope';
+  font-family: "Manrope";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/Manrope-400-700.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("/fonts/Manrope-400-700.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -95,15 +101,20 @@
   --ring: oklch(0.825 0.249 145.7);
   --field-dot: oklch(0.383 0.058 167.8 / 80%);
   --growth-glow: oklch(0.825 0.249 145.7 / 18%);
-  --glow: radial-gradient(48rem 28rem at 100% 0%, var(--growth-glow), transparent 65%),
+  --glow:
+    radial-gradient(48rem 28rem at 100% 0%, var(--growth-glow), transparent 65%),
     radial-gradient(circle at 1px 1px, var(--field-dot) 1px, transparent 1.6px);
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background: var(--glow), var(--color-background);
-    background-size: auto, 28px 28px;
+    background-size:
+      auto,
+      28px 28px;
     background-repeat: no-repeat, repeat;
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
@@ -111,9 +122,20 @@
     font-family: var(--font-sans);
     min-height: 100vh;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
-  h1 { letter-spacing: -0.03em; }
-  ::selection { background: color-mix(in oklab, var(--primary) 30%, transparent); }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  h1 {
+    letter-spacing: -0.03em;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 30%, transparent);
+  }
 }
 
 @utility panel {
@@ -123,9 +145,26 @@
   box-shadow: none;
 }
 
-@keyframes sprout { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@utility animate-sprout { animation: sprout 0.5s ease-out both; }
+@keyframes sprout {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animate-sprout {
+  animation: sprout 0.5s ease-out both;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 150ms !important; animation-iteration-count: 1 !important; transition-duration: 150ms !important; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 150ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+  }
 }

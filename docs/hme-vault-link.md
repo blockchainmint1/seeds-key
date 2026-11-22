@@ -19,6 +19,7 @@ The Key-side production trust map is deliberately empty. No Vault request QR is 
 ## Vault work (in the HME Vault project)
 
 Copy these files and their dependencies from Key:
+
 - `src/lib/pockets/*` and `src/lib/key-signin/{rules,seeds-key-reference}.ts`, verbatim SEEDS copies.
 - `src/lib/seeds-key/vault-protocol.ts` and `vault-link-reference.ts`. The reference no longer imports the Key validator module; protocol constants and canonical verification are browser/offline-safe.
 - Pin the same independently verified production public key in `SEEDS_REQUEST_KEYS` using its exact key ID. Do not include test fixtures in application code.

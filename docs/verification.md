@@ -32,6 +32,8 @@ These files and the other declared SEEDS reference modules remain verbatim copie
 
 After the guard passes, client assets are normally in `dist/client` (or `.output/public` with a different compatible output configuration). Record local SHA-256 checksums of every emitted client file, including lazy Ledger chunks. Auditor packets carry source `SHA256SUMS` separately from built-client checksums; a source checksum is not a deployment checksum.
 
+Reproducible-build evidence: on 2026-11-22 an independent reviewer built from a clean checkout of the public repository and found the emitted `routes` and `index` client chunks byte-identical (same filenames and SHA-256) to the ones the live host serves. To repeat: check out the commit the live host serves, run `bun install --frozen-lockfile` and `bun run build` with the pinned Bun version, hash every emitted client file, and compare against the live-host fetch below.
+
 At an authorized release, fetch the HTML from `https://key.seeds.honest.money` without a sign-in request. Check the delivered content security policy, referrer meta tag, script nonces and script list. Fetch same-origin `/assets/` files referenced by that HTML and by its import graph and compute SHA-256 checksums over the decoded response bodies. Compare those exact bytes with the corresponding local files, including dynamically imported chunks. Do not send cookies, session tokens or sign-in URLs to comparison tools.
 
 Different asset names or checksums require investigation. Hosting-injected HTML, per-request nonces, build-environment differences and transformed assets mean a matching source tree alone does not prove reproducible deployment. Do not claim that these repairs have been deployed: publication is held.

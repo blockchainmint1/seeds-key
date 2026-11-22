@@ -83,13 +83,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#002419" },
       { title: "Seeds Key" },
-      { name: "description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
+      {
+        name: "description",
+        content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet.",
+      },
       { name: "author", content: "Honest Money Ecosystem" },
       // The hosting edge rewrites the Referrer-Policy header; a meta tag is applied
       // by the browser after headers and survives that rewrite.
       { name: "referrer", content: "no-referrer" },
       { property: "og:title", content: "Seeds Key" },
-      { property: "og:description", content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet." },
+      {
+        property: "og:description",
+        content: "Sign in to Seeds Exchange with your Cold Storage Coin or wallet.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -101,7 +107,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "preload", href: "/fonts/Manrope-400-700.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      {
+        rel: "preload",
+        href: "/fonts/Manrope-400-700.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
     ],
   }),
   shellComponent: RootShell,

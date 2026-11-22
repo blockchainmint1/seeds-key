@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -27,9 +28,11 @@ use the editor.
   `LOVABLE_API_KEY`. When Lovable does not provide one, users can bring their
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
+
 <!-- LOVABLE:END -->
 
 ## Seeds Key rules
+
 - `src/lib/pockets/*` and `src/lib/key-signin/{rules,seeds-key-reference}.ts` are verbatim copies from the SEEDS project; never edit them here, re-copy instead. tsconfig matches SEEDS' strictness so they compile unchanged.
 - The recovery phrase must never be sent, stored, logged or shown; only `src/lib/seeds-key/flows.ts` touches it, in memory.
 - Manifest trust uses `src/lib/seeds-key/policy.ts`: designated Key previews and development localhost trust only SEEDS preview, never production; all other hosts are production-only. Why: less-restricted editor pages must not hand real keys to live SEEDS.

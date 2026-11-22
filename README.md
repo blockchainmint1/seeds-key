@@ -18,12 +18,12 @@
 
 Seeds Key is the front door to Seeds Exchange for anyone who already holds honest money. Instead of creating a password, you prove who you are with something you already own, and Seeds Key builds your personal **trading pocket** (pocket 1106) on your own device:
 
-| Sign in with | How |
-| --- | --- |
-| 🪙 **Cold Storage Coin** | Scan the recovery-phrase QR under the seal |
+| Sign in with                          | How                                                                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 🪙 **Cold Storage Coin**              | Scan the recovery-phrase QR under the seal                                                                      |
 | 🔐 **HME Vault** · activation pending | Signed QR exchange with your offline Vault phone; requires the verified Seeds signer and matching Vault release |
-| 🦊 **Your wallet** | MetaMask, Rabby, Coinbase Wallet or Phantom |
-| 🔌 **Ledger** | Directly over USB or Bluetooth (Ethereum app) |
+| 🦊 **Your wallet**                    | MetaMask, Rabby, Coinbase Wallet or Phantom                                                                     |
+| 🔌 **Ledger**                         | Directly over USB or Bluetooth (Ethereum app)                                                                   |
 
 One sign-in sets up trading keys for **16 chain families**: TXC, ISK, Bitcoin, Litecoin, Ethereum / BNB / Base / PulseChain, Dogecoin, Bitcoin Cash, Zcash, XRP, TRON, Solana, Dash, Cosmos, THORChain, Cardano and Monero.
 
@@ -44,11 +44,11 @@ One sign-in sets up trading keys for **16 chain families**: TXC, ISK, Bitcoin, L
 
 Seeds Key is one tool in the **[Honest Money Ecosystem](https://honest.money)**. HME is a family of networks, coins and tools built for honest money.
 
-| Coin | About | Build on it |
-| --- | --- | --- |
+| Coin                | About                                 | Build on it                                        |
+| ------------------- | ------------------------------------- | -------------------------------------------------- |
 | **TXC** · TEXITcoin | Bitcoin-style chain with Omni layer 2 | [texitcoin.org/build](https://texitcoin.org/build) |
-| **ISK** | TXC's sibling network | [honest.money](https://honest.money) |
-| **ZCU** · ZeroChill | The ZeroChill network | [zerochill.com/build](https://zerochill.com/build) |
+| **ISK**             | TXC's sibling network                 | [honest.money](https://honest.money)               |
+| **ZCU** · ZeroChill | The ZeroChill network                 | [zerochill.com/build](https://zerochill.com/build) |
 
 **The family of tools:** Seeds Exchange · Seeds Key · HME Wallet · HME Vault · Cold Storage Coins. Find them all at [honest.money](https://honest.money).
 
@@ -69,12 +69,12 @@ See [verification and shared-source hashes](docs/verification.md), [Vault v2 coo
 
 Built with TanStack Start, React and Tailwind, and audited cryptography from [@noble](https://paulmillr.com/noble/) and [@scure](https://github.com/paulmillr/scure-base).
 
-| Where | What |
-| --- | --- |
-| `src/lib/pockets/`, `src/lib/key-signin/` | Shared derivation and sign-in rules, copied byte-for-byte from Seeds |
-| `src/lib/seeds-key/` | Request checks, coin and wallet flows, Ledger, HME Vault link, security headers |
-| `docs/hme-vault-link.md` | The HME Vault QR protocol |
-| `AGENTS.md` | Project rules and why they exist |
+| Where                                     | What                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| `src/lib/pockets/`, `src/lib/key-signin/` | Shared derivation and sign-in rules, copied byte-for-byte from Seeds            |
+| `src/lib/seeds-key/`                      | Request checks, coin and wallet flows, Ledger, HME Vault link, security headers |
+| `docs/hme-vault-link.md`                  | The HME Vault QR protocol                                                       |
+| `AGENTS.md`                               | Project rules and why they exist                                                |
 
 ⚠️ The live address `key.seeds.honest.money` is permanent: wallet pockets are derived from it, so forks must use their own address and won't share pockets.
 
@@ -90,6 +90,6 @@ Application source is [MIT licensed](LICENSE). The self-hosted fonts have separa
 
 **Part of the [honest.money](https://honest.money) ecosystem** · [Terms](https://key.seeds.honest.money/terms) · [Privacy](https://key.seeds.honest.money/privacy) · [Manifesto](https://key.seeds.honest.money/manifesto)
 
-*Honest money, honest tools.* 🌱
+_Honest money, honest tools._ 🌱
 
 </div>

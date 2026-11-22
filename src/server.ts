@@ -60,7 +60,11 @@ export default {
       headers.set("x-seeds-key-script-nonce", nonce);
       // The dev adapter's Request is not always the global Request implementation.
       // Reconstruct from standard fields rather than cloning its private internal state.
-      const init: RequestInit & { duplex?: "half" } = { method: request.method, headers, signal: request.signal };
+      const init: RequestInit & { duplex?: "half" } = {
+        method: request.method,
+        headers,
+        signal: request.signal,
+      };
       if (request.body && request.method !== "GET" && request.method !== "HEAD") {
         init.body = request.body;
         init.duplex = "half";
@@ -69,11 +73,14 @@ export default {
       return withSecurityHeaders(request, await normalizeCatastrophicSsrResponse(response), nonce);
     } catch (error) {
       console.error(error);
-      return withSecurityHeaders(request, new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      }), nonce);
+      return withSecurityHeaders(
+        request,
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+        nonce,
+      );
     }
   },
 };
-

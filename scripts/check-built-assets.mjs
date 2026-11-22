@@ -22,7 +22,11 @@ console.log("Building…");
 execFileSync("bunx", ["vite", "build"], { cwd: root, stdio: "inherit" });
 
 // Client assets land in .output/public (Nitro) or dist/client, depending on the toolchain.
-const candidates = [join(root, ".output", "public"), join(root, "dist", "client"), join(root, "dist")];
+const candidates = [
+  join(root, ".output", "public"),
+  join(root, "dist", "client"),
+  join(root, "dist"),
+];
 const clientDir = candidates.find((dir) => existsSync(dir));
 if (!clientDir) {
   console.error(`No client build output found in: ${candidates.join(", ")}`);
@@ -48,23 +52,35 @@ const failures = [];
 // 1. The empty stub must not appear anywhere.
 for (const file of assets) {
   if (readFileSync(file, "utf8").includes("__vite-browser-external")) {
-    failures.push(`${relative(clientDir, file)} references __vite-browser-external (Node built-in externalised into the client bundle)`);
+    failures.push(
+      `${relative(clientDir, file)} references __vite-browser-external (Node built-in externalised into the client bundle)`,
+    );
   }
 }
 
 // 2. Locate the Ledger chunk and confirm it is only dynamically imported.
-const ledgerChunk = assets.find((file) => readFileSync(file, "utf8").includes("@ledgerhq/hw-app-eth") || readFileSync(file, "utf8").includes("TransportWebHID"));
+const ledgerChunk = assets.find(
+  (file) =>
+    readFileSync(file, "utf8").includes("@ledgerhq/hw-app-eth") ||
+    readFileSync(file, "utf8").includes("TransportWebHID"),
+);
 if (!ledgerChunk) {
-  failures.push("No client chunk contains the Ledger SDK — the dynamic import may have been dropped");
+  failures.push(
+    "No client chunk contains the Ledger SDK — the dynamic import may have been dropped",
+  );
 } else {
   const chunkName = relative(clientDir, ledgerChunk).split("/").pop();
   for (const file of assets) {
     if (file === ledgerChunk) continue;
     const code = readFileSync(file, "utf8");
     // Static forms: import"./chunk.js", from"./chunk.js", or a modulepreload of it.
-    const staticRef = new RegExp(`(import\\s*["']|from\\s*["'])[^"']*${chunkName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`);
+    const staticRef = new RegExp(
+      `(import\\s*["']|from\\s*["'])[^"']*${chunkName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`,
+    );
     if (staticRef.test(code)) {
-      failures.push(`${relative(clientDir, file)} statically imports the Ledger chunk ${chunkName} — it must load only after Continue`);
+      failures.push(
+        `${relative(clientDir, file)} statically imports the Ledger chunk ${chunkName} — it must load only after Continue`,
+      );
     }
   }
 }
@@ -75,4 +91,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`\nBuilt-output guard OK: ${assets.length} client assets checked, no stub references, Ledger chunk loads dynamically only.`);
+console.log(
+  `\nBuilt-output guard OK: ${assets.length} client assets checked, no stub references, Ledger chunk loads dynamically only.`,
+);
