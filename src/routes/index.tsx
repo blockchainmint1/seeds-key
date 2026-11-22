@@ -97,6 +97,7 @@ function Welcome() {
           <li><a className="text-primary underline" href="https://vault.honest.money">HME Vault</a></li>
           <li><a className="text-primary underline" href="https://coldstoragecoins.com">Cold Storage Coin</a></li>
           <li><a className="text-primary underline" href="https://www.ledger.com">Ledger</a> (USB &amp; Bluetooth)</li>
+          <li>Your own wallet — <a className="text-primary underline" href="https://metamask.io">MetaMask</a>, Rabby, Coinbase, <a className="text-primary underline" href="https://phantom.com">Phantom</a></li>
         </ul>
       </div>
       <div className="panel p-5 text-sm text-muted-foreground">
