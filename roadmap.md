@@ -1,6 +1,8 @@
 # SEEDS compatibility update
 
 ## Ledger and approved audit follow-ups
+- [x] HME Vault link (approved by Bobby Nov 22 2026): Key shows Seeds' request QR, reads the Vault's animated answer, checks it fully and sends it; 7 tests, 91/91 pass.
+- [ ] HME Vault side ("Link to Seeds" screen) — blocked: must be built in the HME Vault project from docs/hme-vault-link.md; then real-phone QR test and audit.
 - [x] Sync always-pocket-1106 decision (Bobby, Nov 22 2026): re-copied SEEDS rules.ts and coins.ts verbatim (snapshot 0b048b02) — pocketFor() always returns SEEDS_POCKET (1106), including after a revoke; coin accounts now named by 6-digit CoinID. Added our own rules.test.ts pinning 1106 (5 tests). 84/84 tests pass, built-output guard OK, build OK. Manifest validation still accepts the 1106–2105 range intentionally — SEEDS enforces 1106 server-side and answers use_pocket: 1106. Auditor supplement delivered.
 - [x] Replace reported Ledger 0x650e raw error with Ethereum-app recovery guidance; desktop USB/mobile Bluetooth before-and-after simulations verified, 78 tests pass; signing and publication unchanged.
 - [x] Review fourth-round Ledger audit against current code and loading-repair supplement; 72 tests pass, no application changes applied. Audit covers 7014e33, not the later 0d1d102 loading repair.

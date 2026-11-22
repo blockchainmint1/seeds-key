@@ -4,6 +4,7 @@ import jsQR from "jsqr";
 import { Camera, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LedgerFlow } from "@/components/LedgerFlow";
+import { VaultFlow } from "@/components/VaultFlow";
 import { Page } from "@/components/SiteFooter";
 import { loadManifest, seedsReturnUrl, validateActiveManifest, type FullManifest, type HandoffResult } from "@/lib/seeds-key/manifest";
 import { pairingCode } from "@/lib/key-signin/rules";
@@ -73,7 +74,7 @@ function Index() {
             ) : (
               <>
                 {signer && <p className="mb-5 break-words font-mono text-lg text-primary">{signer}</p>}
-                {kind === "wallet" ? <WalletFlow m={manifest} onDone={setDone} onIdentity={setSigner} /> : <CoinFlow m={manifest} onDone={setDone} onIdentity={setSigner} />}
+                {kind === "wallet" ? <WalletFlow m={manifest} onDone={setDone} onIdentity={setSigner} /> : <CoinChoice m={manifest} onDone={setDone} onIdentity={setSigner} />}
               </>
             )}
           </>
@@ -111,6 +112,16 @@ function SiteBadge({ m }: { m: FullManifest }) {
 
 function Problem({ text }: { text: string }) {
   return <div className="panel border-destructive/50 p-5 text-destructive">{text}</div>;
+}
+
+function CoinChoice({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Done) => void; onIdentity: (name: string) => void }) {
+  const [vault, setVault] = useState(false);
+  return (
+    <div className="space-y-6">
+      {vault ? <VaultFlow m={m} onDone={onDone} onIdentity={onIdentity} /> : <CoinFlow m={m} onDone={onDone} onIdentity={onIdentity} />}
+      <Button variant="outline" className="w-full" onClick={() => setVault((v) => !v)}>{vault ? "Scan a Cold Storage Coin instead" : "Use HME Vault instead"}</Button>
+    </div>
+  );
 }
 
 function CoinFlow({ m, onDone, onIdentity }: { m: FullManifest; onDone: (d: Done) => void; onIdentity: (name: string) => void }) {
