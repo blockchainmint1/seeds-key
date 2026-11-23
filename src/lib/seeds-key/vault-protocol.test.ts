@@ -10,7 +10,7 @@ import { signedRequest, TEST_TRUST } from "@/test/vault-fixture";
 describe("signed Vault request policy", () => {
   it("production pins only the verified SEEDS key and rejects the test signer", () => {
     expect(SEEDS_REQUEST_KEYS).toEqual({
-      "seeds-vault-2026-11": "KuDdTWX-bDwxkSff2lULKVwvUS_Dfa0tZLy_iWefuxc",
+      "seeds-vault-kms-2026-11": "6_06ZOHGeDeGX7O1ToRTAmdiGs0_AOSSX70VbTd9IjA",
     });
     expect(() => readSignedVaultRequest(signedRequest())).toThrow(/verified signing key/);
   });

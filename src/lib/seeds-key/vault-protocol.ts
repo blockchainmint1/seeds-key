@@ -12,11 +12,13 @@ export const MAX_REQUEST_CHARS = 8192;
 export const SCAN_TIMEOUT_MS = 120_000;
 export type RequestTrust = Readonly<Record<string, string>>;
 
-// SEEDS' PUBLIC request-signing key, verified 2026-11-22 against SEEDS' source,
-// its live endpoint and by the owner on his own phone (SHA-256 b81366bf…2163307c).
+// SEEDS' PUBLIC request-signing key (AWS KMS Ed25519), verified 2026-11-23 against
+// SEEDS' source, its live endpoint and by the owner on his own phone
+// (SHA-256 0556577f…37c86d4d). Retired seeds-vault-2026-11 (b81366bf…2163307c) was
+// never pinned by any app; its server secret is deleted.
 // Never add a QR-supplied key or unsigned fallback.
 export const SEEDS_REQUEST_KEYS: RequestTrust = Object.freeze({
-  "seeds-vault-2026-11": "KuDdTWX-bDwxkSff2lULKVwvUS_Dfa0tZLy_iWefuxc",
+  "seeds-vault-kms-2026-11": "6_06ZOHGeDeGX7O1ToRTAmdiGs0_AOSSX70VbTd9IjA",
 });
 
 export type SignedVaultRequest = {
