@@ -28,6 +28,18 @@ sha256sum src/lib/key-signin/rules.ts src/lib/pockets/coins.ts
 
 These files and the other declared SEEDS reference modules remain verbatim copies. Obtain the recorded upstream snapshot independently for byte-for-byte comparison. Re-copy upstream files rather than editing them locally.
 
+The extra-password (BIP39 passphrase) support in `src/lib/key-signin/seeds-key-reference.ts` was re-copied from SEEDS snapshot **`3ed79f2d`** at Key commit **`780ae69`**.
+
+## Vault request-signing key verification
+
+The pinned SEEDS request-signing key in `src/lib/seeds-key/vault-protocol.ts` is `seeds-vault-kms-2026-11` (AWS KMS Ed25519), SHA-256 fingerprint of the 32 raw public-key bytes:
+
+```text
+0556577f852b0cf2a05a1c75ecbf806e6657ce193393d9e800137b6537c86d4d
+```
+
+It was verified on 2026-11-23 against SEEDS' source, SEEDS' live endpoint `https://seeds.honest.money/api/public/key-signin/vault-signer`, and by the owner on his own phone (read-aloud check: first 8 `0556577f`, last 8 `37c86d4d`). Anyone, including the Vault project, can fetch the same endpoint and confirm they pin the same bytes. The retired key `seeds-vault-2026-11` (fingerprint `b81366bf…2163307c`) was pinned briefly by Key on 2026-11-22, never by Vault, and its server secret is deleted.
+
 ## Local build and live assets
 
 After the guard passes, client assets are normally in `dist/client` (or `.output/public` with a different compatible output configuration). Record local SHA-256 checksums of every emitted client file, including lazy Ledger chunks. Auditor packets carry source `SHA256SUMS` separately from built-client checksums; a source checksum is not a deployment checksum.

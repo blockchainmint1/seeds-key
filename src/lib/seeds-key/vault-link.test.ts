@@ -120,12 +120,10 @@ describe("HME Vault link", () => {
   });
   it("posts once and reads the held-confirmation result", async () => {
     const { m, h } = await answer();
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue({
-        status: 200,
-        json: async () => ({ signed_in: false, needs_confirm: true, pocket: 1106 }),
-      });
+    const fetcher = vi.fn().mockResolvedValue({
+      status: 200,
+      json: async () => ({ signed_in: false, needs_confirm: true, pocket: 1106 }),
+    });
     vi.stubGlobal("fetch", fetcher);
     const signal = new AbortController().signal;
     expect(await submitVaultHandoff(m, h, signal)).toEqual({

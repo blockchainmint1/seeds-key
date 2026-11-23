@@ -6,3 +6,9 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+# Verbatim upstream copies — must stay byte-identical to SEEDS / HME Vault
+src/lib/pockets/
+src/lib/key-signin/rules.ts
+src/lib/key-signin/seeds-key-reference.ts
+src/lib/seeds-key/vault-link-reference.ts
+src/lib/seeds-key/qr-parts.ts

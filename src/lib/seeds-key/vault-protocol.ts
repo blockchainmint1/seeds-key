@@ -15,7 +15,7 @@ export type RequestTrust = Readonly<Record<string, string>>;
 // SEEDS' PUBLIC request-signing key (AWS KMS Ed25519), verified 2026-11-23 against
 // SEEDS' source, its live endpoint and by the owner on his own phone
 // (SHA-256 0556577f…37c86d4d). Retired seeds-vault-2026-11 (b81366bf…2163307c) was
-// never pinned by any app; its server secret is deleted.
+// pinned briefly by Key, never by Vault; retired and its server secret deleted 2026-11-23.
 // Never add a QR-supplied key or unsigned fallback.
 export const SEEDS_REQUEST_KEYS: RequestTrust = Object.freeze({
   "seeds-vault-kms-2026-11": "6_06ZOHGeDeGX7O1ToRTAmdiGs0_AOSSX70VbTd9IjA",
