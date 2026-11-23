@@ -15,6 +15,7 @@ import { ripemd160 } from "@noble/hashes/legacy.js";
 import { base64, base64urlnopad, createBase58check } from "@scure/base";
 import { keySigninMessage, normalizeIdentity, shortKeyName } from "@/lib/key-signin/rules";
 import { POCKET_COINS, accountPath, type PocketCoin } from "@/lib/pockets/coins";
+import { readVaultLabel } from "./vault-label";
 import {
   readSubmit,
   validateActiveManifest,
@@ -189,6 +190,7 @@ export function readVaultResponse(text: string, m: FullManifest): VaultHandoff {
     );
   if (!txcSignatureMatches(identity, message, signature))
     throw new Error("The Vault's signature didn't match. Start again on the Vault.");
+  const label = readVaultLabel(body, message, identity, txcSignatureMatches);
   return {
     message,
     signature,
@@ -201,11 +203,15 @@ export function readVaultResponse(text: string, m: FullManifest): VaultHandoff {
       paths: want,
       xpubs,
       payload,
+      ...label,
     },
   };
 }
 
-export const vaultSignerName = (h: VaultHandoff) => shortKeyName("coin", h.identity);
+export const vaultSignerName = (h: VaultHandoff) => {
+  const label = readVaultLabel(h.body, h.message, h.identity, txcSignatureMatches);
+  return label ? `Vault ${label.vault_fingerprint}` : shortKeyName("coin", h.identity);
+};
 
 /** One POST — the Vault can't re-sign without another QR round, so a pocket change means starting again. */
 export async function submitVaultHandoff(

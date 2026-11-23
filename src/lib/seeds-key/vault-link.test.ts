@@ -12,6 +12,8 @@ import { VaultAnswerCollector } from "./vault-scan";
 import { toParts } from "./qr-parts";
 import { checkManifest } from "./manifest";
 import { TEST_TRUST, vaultManifest } from "@/test/vault-fixture";
+import { coinIdentityKey, signTxcMessage } from "@/lib/key-signin/seeds-key-reference";
+import { vaultLabelMessage } from "./vault-label";
 
 vi.mock("./vault-protocol", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./vault-protocol")>();
@@ -39,7 +41,77 @@ async function answer() {
   );
   return { m, text, h: readVaultResponse(text, m) };
 }
+
+async function labeledAnswer() {
+  const { m, text } = await answer();
+  const r = JSON.parse(text);
+  const key = coinIdentityKey(PHRASE);
+  try {
+    r.body.vault_fingerprint = "73c5da0a";
+    r.body.vault_label_signature = signTxcMessage(
+      key,
+      vaultLabelMessage(r.message, r.body.vault_fingerprint),
+    ).signature;
+  } finally {
+    key.fill(0);
+  }
+  return { m, r, h: readVaultResponse(JSON.stringify(r), m) };
+}
 describe("HME Vault link", () => {
+  it("uses the Vault's eight-character fingerprint without changing coin identity", async () => {
+    const { h } = await labeledAnswer();
+    expect(h.body["vault_fingerprint"]).toBe("73c5da0a");
+    expect(h.identity).toBe("TZZCuca5ntPVCJL5ryTjh465Jvw5vHxsVd");
+    expect(h.body["kind"]).toBe("coin");
+    expect(h.body["account"]).toBe(1106);
+  });
+  it("forwards the authenticated eight-character ID and unchanged handoff to Seeds", async () => {
+    const { m, h } = await labeledAnswer();
+    const fetcher = vi.fn().mockResolvedValue({
+      status: 200,
+      json: async () => ({ signed_in: true, new_account: false, pocket: 1106 }),
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await submitVaultHandoff(m, h);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const call = fetcher.mock.calls[0];
+    if (!call) throw new Error("Missing POST");
+    const posted = JSON.parse(call[1].body);
+    expect(posted.vault_fingerprint).toBe("73c5da0a");
+    expect(posted.vault_label_signature).toBe(h.body["vault_label_signature"]);
+    expect(posted.message).toBe(h.message);
+    expect(posted.signature).toBe(h.signature);
+    expect(posted.payload).toBe(h.body["payload"]);
+  });
+  it("refuses swapped fingerprint metadata before POST", async () => {
+    const { m, h } = await labeledAnswer();
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    await expect(
+      submitVaultHandoff(m, {
+        ...h,
+        body: { ...h.body, vault_fingerprint: "00000000" },
+      }),
+    ).rejects.toThrow(/seed ID/);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("refuses a fingerprint signature copied from another handoff", async () => {
+    const { r } = await labeledAnswer();
+    const { m, text } = await answer();
+    const next = JSON.parse(text);
+    next.body.vault_fingerprint = r.body.vault_fingerprint;
+    next.body.vault_label_signature = r.body.vault_label_signature;
+    // A fresh sealed envelope changes its hash, and hence its signed text.
+    expect(next.message).not.toBe(r.message);
+    expect(() => readVaultResponse(JSON.stringify(next), m)).toThrow(/seed ID/);
+  });
+  it("refuses unsigned or malformed fingerprint metadata", async () => {
+    const { m, r } = await labeledAnswer();
+    delete r.body.vault_label_signature;
+    expect(() => readVaultResponse(JSON.stringify(r), m)).toThrow(/seed ID/);
+    r.body.vault_fingerprint = "73c5da0";
+    expect(() => readVaultResponse(JSON.stringify(r), m)).toThrow(/seed ID/);
+  });
   it("Vault answer for pocket 1106 covers all 16 chains and is accepted", async () => {
     const { h } = await answer();
     expect(h.body["account"]).toBe(1106);

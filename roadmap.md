@@ -12,10 +12,12 @@
 - Key-side Vault v2 request verification, bounded modern QR scans, timeout and abortable handoff; coordination instructions
 - Approved re-audit repairs: preview-only trust, unavailable Vault choice hidden, larger request QR, font notices and security/provenance/verifier docs; 145 tests and built-output guard pass
 - Specific, allowlisted Seeds handoff refusal messages; signed text, signatures and keys remain unchanged.
+- Bobby reports successful Vault-to-SEEDS pairing on his phone.
+- Key-side optional signed Vault seed-fingerprint label and unchanged forwarding; 159 tests pass. Cross-project instructions and auditor handoff prepared.
 
 ## Next
 
-- Diagnose Bobby's live Vault pairing refusal — Vault shows no installed version (Bobby will add it in the next APK); obtain the exact sanitized Seeds rejection code, and identify the installed APK if needed. Fresh Key/Vault synthetic probes passed live text/key-format validation and stopped intentionally at signature verification.
+- Vault seed-fingerprint naming — blocked on Vault producing the signed label and SEEDS verifying/storing/displaying it; independent review and updated APK phone test before publication.
 - Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault
 - HME Vault "Link to Seeds" screen — built in the HME Vault project from docs/hme-vault-link.md, then a real-phone QR test
