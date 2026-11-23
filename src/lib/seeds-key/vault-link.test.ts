@@ -144,6 +144,22 @@ describe("HME Vault link", () => {
     await expect(submitVaultHandoff(m, h, c.signal)).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it("a Seeds rejection never rewrites the Vault signature or retries the handoff", async () => {
+    const { m, h } = await answer();
+    const fetcher = vi.fn().mockResolvedValue({
+      status: 400,
+      json: async () => ({ error: "cannot open payload", expected: "untrusted replacement text" }),
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await expect(submitVaultHandoff(m, h)).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const call = fetcher.mock.calls[0];
+    if (!call) throw new Error("Missing POST");
+    const posted = JSON.parse(call[1].body);
+    expect(posted.message).toBe(h.message);
+    expect(posted.signature).toBe(h.signature);
+    expect(posted.payload).toBe(h.body["payload"]);
+  });
   it("cancellation after a response cannot show success", async () => {
     const { m, h } = await answer();
     const c = new AbortController();

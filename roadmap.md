@@ -11,9 +11,11 @@
 - Hardened delivery: strict-dynamic script policy, no-referrer meta, built-output guard script
 - Key-side Vault v2 request verification, bounded modern QR scans, timeout and abortable handoff; coordination instructions
 - Approved re-audit repairs: preview-only trust, unavailable Vault choice hidden, larger request QR, font notices and security/provenance/verifier docs; 145 tests and built-output guard pass
+- Specific, allowlisted Seeds handoff refusal messages; signed text, signatures and keys remain unchanged.
 
 ## Next
 
+- Diagnose Bobby's live Vault pairing refusal — awaiting his installed Vault version and exact underlying Seeds rejection; fresh Key/Vault synthetic probes both passed live text/key-format validation and stopped intentionally at signature verification.
 - Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault
 - HME Vault "Link to Seeds" screen — built in the HME Vault project from docs/hme-vault-link.md, then a real-phone QR test

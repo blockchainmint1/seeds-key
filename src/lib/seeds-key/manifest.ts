@@ -3,6 +3,7 @@ import type { KeyManifest } from "@/lib/key-signin/seeds-key-reference";
 import { isKeyKind, pairingCode, KEY_REQUEST_TTL_MS, type KeyKind } from "@/lib/key-signin/rules";
 import { validPocket } from "@/lib/pockets/coins";
 import { currentKeyOrigin, SEEDS_PREVIEW_ORIGIN, seedsOrigins } from "./policy";
+import { submitFailureMessage } from "./submit-errors";
 
 export type FullManifest = KeyManifest & {
   app_name: string;
@@ -197,7 +198,7 @@ export function readSubmit(status: number, value: unknown): SubmitResult {
   if (status === 400)
     return {
       ok: false,
-      error: "The signed text didn't match what Seeds expected. Start again on Seeds.",
+      error: submitFailureMessage(body["error"]),
     };
   if (status === 401) return { ok: false, error: "The signature didn't match. Try again." };
   if (status === 429)
