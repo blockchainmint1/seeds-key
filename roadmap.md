@@ -15,7 +15,7 @@
 
 ## Next
 
-- Diagnose Bobby's live Vault pairing refusal — awaiting his installed Vault version and exact underlying Seeds rejection; fresh Key/Vault synthetic probes both passed live text/key-format validation and stopped intentionally at signature verification.
+- Diagnose Bobby's live Vault pairing refusal — Vault shows no installed version (Bobby will add it in the next APK); obtain the exact sanitized Seeds rejection code, and identify the installed APK if needed. Fresh Key/Vault synthetic probes passed live text/key-format validation and stopped intentionally at signature verification.
 - Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault
 - HME Vault "Link to Seeds" screen — built in the HME Vault project from docs/hme-vault-link.md, then a real-phone QR test
