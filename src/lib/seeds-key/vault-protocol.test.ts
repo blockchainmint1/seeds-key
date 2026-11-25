@@ -5,6 +5,7 @@ import {
   SEEDS_REQUEST_KEYS,
 } from "./vault-protocol";
 import { buildVaultResponse } from "./vault-link-reference";
+import { POCKET_COINS, accountPath } from "@/lib/pockets/coins";
 import { signedRequest, TEST_TRUST } from "@/test/vault-fixture";
 
 describe("signed Vault request policy", () => {
@@ -18,6 +19,55 @@ describe("signed Vault request policy", () => {
     const r = readSignedVaultRequest(signedRequest(), TEST_TRUST);
     expect(r.pocket).toBe(1106);
     expect(r.paths).toHaveLength(16);
+  });
+  it("accepts future optional paths and verifies the original signed order", () => {
+    const paths = [
+      ...POCKET_COINS.map((c) => accountPath(c, 1106)).reverse(),
+      "m/44'/148'/1106'",
+      "m/44'/607'/1106'",
+      "m/44'/784'/1106'/0'/0'",
+    ];
+    const req = signedRequest({ paths });
+    expect(readSignedVaultRequest(req, TEST_TRUST).paths).toEqual(paths);
+    expect(() =>
+      readSignedVaultRequest({ ...req, paths: [...paths].reverse() }, TEST_TRUST),
+    ).toThrow();
+  });
+  it.each([
+    "m/44'/148'/0'",
+    "m/44'/148'/1107'",
+    "m/44'/148'/2105'",
+    "m/44'/148'/1106'/0",
+    "m/44'/148'/1106'/0'/0'/0'/0'",
+  ])("refuses signed out-of-scope extra path %s", (path) => {
+    expect(() =>
+      readSignedVaultRequest(
+        signedRequest({ paths: [...POCKET_COINS.map((c) => accountPath(c, 1106)), path] }),
+        TEST_TRUST,
+      ),
+    ).toThrow();
+  });
+  it("refuses duplicate paths and missing existing keys", () => {
+    const paths = POCKET_COINS.map((c) => accountPath(c, 1106));
+    expect(() =>
+      readSignedVaultRequest(signedRequest({ paths: [...paths, "m/44'/60'/1106'"] }), TEST_TRUST),
+    ).toThrow();
+    expect(() =>
+      readSignedVaultRequest(signedRequest({ paths: paths.slice(1) }), TEST_TRUST),
+    ).toThrow();
+  });
+  it("caps signed path lists at forty", () => {
+    const paths = POCKET_COINS.map((c) => accountPath(c, 1106));
+    const extras = Array.from({ length: 24 }, (_, i) => `m/44'/${800 + i}'/1106'`);
+    expect(
+      readSignedVaultRequest(signedRequest({ paths: [...paths, ...extras] }), TEST_TRUST).paths,
+    ).toHaveLength(40);
+    expect(() =>
+      readSignedVaultRequest(
+        signedRequest({ paths: [...paths, ...extras, "m/44'/999'/1106'"] }),
+        TEST_TRUST,
+      ),
+    ).toThrow();
   });
   it("refuses unsigned requests", () => {
     const { request_sig, ...r } = signedRequest();

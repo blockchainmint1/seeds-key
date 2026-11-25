@@ -10,5 +10,6 @@ routeTree.gen.ts
 src/lib/pockets/
 src/lib/key-signin/rules.ts
 src/lib/key-signin/seeds-key-reference.ts
+src/lib/key-signin/vault-protocol.ts
 src/lib/seeds-key/vault-link-reference.ts
 src/lib/seeds-key/qr-parts.ts

@@ -23,14 +23,14 @@ export function readVaultRequest(text: string, trust: RequestTrust = SEEDS_REQUE
 export async function buildVaultResponse(req: VaultRequest, words: string, trust: RequestTrust = SEEDS_REQUEST_KEYS): Promise<string> {
   const r = readSignedVaultRequest(req, trust);
   const manifest: KeyManifest = {
-    type: "seeds-key-signin", version: 1, submit_url: "", domain: r.domain, key_host: r.key_host,
+    type: "seeds-key-signin", version: 1, submit_url: `https://${r.domain}/api/public/key-signin/submit`, domain: r.domain, key_host: r.key_host,
     challenge_id: r.challenge_id, challenge: r.challenge, recipient_pubkey: r.recipient_pubkey,
     pocket: SEEDS_POCKET, issued_at: r.issued_at, expires_at: r.expires_at,
   };
   const key = coinIdentityKey(words);
   try {
     const identity = signTxcMessage(key, "x").address;
-    const h = await buildHandoff({ manifest, words, kind: "coin", identity, account: SEEDS_POCKET });
+    const h = await buildHandoff({ manifestUrl: `https://${r.domain}/api/public/key-signin/manifest/${r.challenge_id}`, manifest, words, kind: "coin", identity, account: SEEDS_POCKET });
     const signature = signTxcMessage(key, h.message).signature;
     readSignedVaultRequest(r, trust); // Derivation may have taken time; do not display an expired answer.
     return JSON.stringify({ type: VAULT_RESPONSE, v: 2, challenge_id: r.challenge_id, message: h.message, signature, body: h.body });

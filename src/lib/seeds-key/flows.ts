@@ -35,7 +35,14 @@ export async function coinSignIn(
     return await submitWithRetry(
       manifest,
       (account) =>
-        buildHandoff({ manifest, words, kind: "coin", identity, ...(account ? { account } : {}) }),
+        buildHandoff({
+          manifestUrl: `${manifest.origin}/api/public/key-signin/manifest/${manifest.challenge_id}`,
+          manifest,
+          words,
+          kind: "coin",
+          identity,
+          ...(account ? { account } : {}),
+        }),
       async (m) => signTxcMessage(key, m).signature,
     );
   } finally {
@@ -151,7 +158,14 @@ export async function walletSignIn(
     return await submitWithRetry(
       manifest,
       (account) =>
-        buildHandoff({ manifest, words, kind: which, identity, ...(account ? { account } : {}) }),
+        buildHandoff({
+          manifestUrl: `${manifest.origin}/api/public/key-signin/manifest/${manifest.challenge_id}`,
+          manifest,
+          words,
+          kind: which,
+          identity,
+          ...(account ? { account } : {}),
+        }),
       async (m) => {
         onStep("Signature 3 of 3 — signs you in on Seeds");
         return sign(m);

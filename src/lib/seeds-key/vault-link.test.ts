@@ -11,7 +11,7 @@ import { buildVaultResponse, readVaultRequest } from "./vault-link-reference";
 import { VaultAnswerCollector } from "./vault-scan";
 import { toParts } from "./qr-parts";
 import { checkManifest } from "./manifest";
-import { TEST_TRUST, vaultManifest } from "@/test/vault-fixture";
+import { signedRequest, TEST_TRUST, vaultManifest } from "@/test/vault-fixture";
 import { coinIdentityKey, signTxcMessage } from "@/lib/key-signin/seeds-key-reference";
 import { vaultLabelMessage } from "./vault-label";
 
@@ -112,6 +112,22 @@ describe("HME Vault link", () => {
     r.body.vault_fingerprint = "73c5da0";
     expect(() => readVaultResponse(JSON.stringify(r), m)).toThrow(/seed ID/);
   });
+  it("future requested paths do not add exports or discard the existing sixteen families", async () => {
+    const m = vaultManifest();
+    const original = m.vault_request as { paths: string[] };
+    m.vault_request = signedRequest({
+      issued_at: m.issued_at,
+      expires_at: m.expires_at,
+      paths: [...original.paths, "m/44'/148'/1106'", "m/44'/607'/1106'", "m/44'/784'/1106'/0'/0'"],
+    });
+    const req = readVaultRequest(vaultRequestText(m), TEST_TRUST);
+    expect(req.paths).toHaveLength(19);
+    const text = await buildVaultResponse(req, PHRASE, TEST_TRUST);
+    const h = readVaultResponse(text, m);
+    expect(h.body["paths"]).toHaveLength(16);
+    expect(Object.keys(h.body["xpubs"] as object).sort()).toEqual([...POCKET_COINS].sort());
+    expect(h.body["account"]).toBe(1106);
+  });
   it("Vault answer for pocket 1106 covers all 16 chains and is accepted", async () => {
     const { h } = await answer();
     expect(h.body["account"]).toBe(1106);
@@ -126,7 +142,7 @@ describe("HME Vault link", () => {
     expect(JSON.parse(text).request_sig).toHaveLength(86);
   });
   it("Vault refuses other pockets and hosts", () => {
-    expect(() => vaultRequestText({ ...vaultManifest(), pocket: 1107 })).toThrow(/match/);
+    expect(() => vaultRequestText({ ...vaultManifest(), pocket: 1107 })).toThrow();
     const m = vaultManifest();
     expect(() =>
       readVaultRequest(

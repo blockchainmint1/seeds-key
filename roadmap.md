@@ -14,9 +14,13 @@
 - Specific, allowlisted Seeds handoff refusal messages; signed text, signatures and keys remain unchanged.
 - Bobby reports successful Vault-to-SEEDS pairing on his phone.
 - Key-side optional signed Vault seed-fingerprint label and unchanged forwarding; 159 tests pass. Cross-project instructions and auditor handoff prepared.
+- Approved new-coin preparation complete on Key: preserved signer through a local wrapper around the verbatim SEEDS protocol, bounded future request paths, 1106-only boundaries and single POST, updated reference callers, exact crypto versions, HYPE/AVAX coverage, unchanged 16-family exports and Vault label. All 175 tests pass; desktop/phone synthetic wallet flows preserve held confirmation.
 
 ## Next
 
+- Vault active-verifier compatibility update and reviewed APK — blocked on the Vault project implementing the attached handoff; this project cannot write to its source.
+- New-coin preparation release — independent audit, shipped-asset guard and authorized production phone test required before publication.
+- XLM/TON/SUI export activation — blocked on SEEDS' written acceptance go-ahead and independently reviewed vectors; do not add these keys yet.
 - Vault seed-fingerprint naming — blocked on Vault producing the signed label and SEEDS verifying/storing/displaying it; independent review and updated APK phone test before publication.
 - Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Vault v2 activation — SEEDS signed manifests and independently verified signing public key pinned in Key/Vault

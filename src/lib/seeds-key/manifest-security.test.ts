@@ -159,10 +159,10 @@ describe("manifest identity and protocol validation", () => {
       expect(() => checkManifest(url(), value, LIVE_KEY_ORIGIN)).toThrow();
     }
   });
-  it("enforces trading pockets 1106 through 2105, never savings account zero", () => {
-    for (const pocket of [1106, 2105])
+  it("accepts only trading pocket 1106", () => {
+    for (const pocket of [1106])
       expect(checkManifest(url(), { ...fixture(), pocket }, LIVE_KEY_ORIGIN).pocket).toBe(pocket);
-    for (const pocket of [0, 1105, 2106, 1106.5, "1106", NaN])
+    for (const pocket of [0, 1105, 1107, 2105, 2106, 1106.5, "1106", NaN])
       expect(() => checkManifest(url(), { ...fixture(), pocket }, LIVE_KEY_ORIGIN)).toThrow();
   });
   it("rejects missing, invalid and expired timestamps, including expiry at the current instant", () => {
@@ -206,14 +206,10 @@ describe("fetch and handoff boundaries", () => {
     ]) {
       expect(readSubmit(200, value).ok).toBe(false);
     }
-    for (const account of [0, 2106, "1106", 1106.5])
+    for (const account of [0, 1107, 2105, 2106, "1106", 1106.5])
       expect(readSubmit(409, { error: "use_pocket", account })).not.toHaveProperty("usePocket");
-    expect(readSubmit(200, { pocket: 2105, signed_in: true, new_account: false })).toEqual({
-      ok: true,
-      signedIn: true,
-      pocket: 2105,
-      newAccount: false,
-    });
+    expect(readSubmit(200, { pocket: 2105, signed_in: true, new_account: false }).ok).toBe(false);
+    expect(readSubmit(200, { pocket: 1107, signed_in: false, needs_confirm: true }).ok).toBe(false);
   });
   it("does no key building or signing for an expired request", async () => {
     const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
@@ -230,7 +226,7 @@ describe("fetch and handoff boundaries", () => {
   it("rechecks expiry after wallet approval before posting", async () => {
     vi.useFakeTimers();
     const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
-    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
+    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: { account: 1106 } });
     const sign = vi.fn().mockImplementation(async () => {
       vi.advanceTimersByTime(60_001);
       return "synthetic";
@@ -240,42 +236,45 @@ describe("fetch and handoff boundaries", () => {
     await expect(submitWithRetry(m, build, sign)).rejects.toThrow();
     expect(fetcher).not.toHaveBeenCalled();
   });
-  it("rebuilds only a validated retry pocket and posts without redirects or credentials", async () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
-    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
+  it.each([1107, 2105])(
+    "never rebuilds or sends a second handoff for pocket %s",
+    async (account) => {
+      const m = checkManifest(url(), fixture(), LIVE_KEY_ORIGIN);
+      const build = vi
+        .fn()
+        .mockResolvedValue({ message: "synthetic test", body: { account: 1106 } });
+      const sign = vi.fn().mockResolvedValue("synthetic");
+      const fetcher = vi
+        .fn()
+        .mockResolvedValue(Response.json({ error: "use_pocket", account }, { status: 409 }));
+      vi.stubGlobal("fetch", fetcher);
+      await expect(submitWithRetry(m, build, sign)).rejects.toThrow(/pocket/);
+      expect(build).toHaveBeenCalledExactlyOnceWith(1106);
+      expect(sign).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("does not silently repeat a handoff even for a 1106 retry", async () => {
+    const m = checkManifest(url(), fixture(), LIVE_KEY_ORIGIN);
+    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: { account: 1106 } });
     const sign = vi.fn().mockResolvedValue("synthetic");
     const fetcher = vi
       .fn()
-      .mockResolvedValueOnce(Response.json({ error: "use_pocket", account: 1107 }, { status: 409 }))
-      .mockResolvedValueOnce(Response.json({ pocket: 1107, signed_in: true, new_account: false }));
+      .mockResolvedValue(Response.json({ error: "use_pocket", account: 1106 }, { status: 409 }));
     vi.stubGlobal("fetch", fetcher);
-    await expect(submitWithRetry(m, build, sign)).resolves.toEqual({
-      ok: true,
-      signedIn: true,
-      pocket: 1107,
-      newAccount: false,
-    });
-    expect(build).toHaveBeenNthCalledWith(2, 1107);
-    expect(fetcher).toHaveBeenCalledWith(
-      m.submit_url,
-      expect.objectContaining({ redirect: "error", credentials: "omit" }),
-    );
+    await expect(submitWithRetry(m, build, sign)).rejects.toThrow(/rebuild/);
+    expect(build).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
-  it("caps valid pocket retries at five without a sixth signing request", async () => {
-    const m = checkManifest(url(), fixture(SEEDS_ORIGIN, LIVE_KEY_ORIGIN), LIVE_KEY_ORIGIN);
-    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: {} });
-    const sign = vi.fn().mockResolvedValue("synthetic");
-    vi.stubGlobal(
-      "fetch",
-      vi
-        .fn()
-        .mockImplementation(async () =>
-          Response.json({ error: "use_pocket", account: 1107 }, { status: 409 }),
-        ),
-    );
-    await expect(submitWithRetry(m, build, sign)).rejects.toThrow();
-    expect(build).toHaveBeenCalledTimes(5);
-    expect(sign).toHaveBeenCalledTimes(5);
+  it("refuses a builder's alternative pocket before signing or posting", async () => {
+    const m = checkManifest(url(), fixture(), LIVE_KEY_ORIGIN);
+    const build = vi.fn().mockResolvedValue({ message: "synthetic test", body: { account: 1107 } });
+    const sign = vi.fn(),
+      fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    await expect(submitWithRetry(m, build, sign)).rejects.toThrow(/1106/);
+    expect(sign).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
 import { isKeyPreview as previewCheck } from "./policy";

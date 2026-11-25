@@ -1,7 +1,7 @@
 import { base64urlnopad } from "@scure/base";
-import type { KeyManifest } from "@/lib/key-signin/seeds-key-reference";
+import { manifestProblem, type KeyManifest } from "@/lib/key-signin/seeds-key-reference";
 import { isKeyKind, pairingCode, KEY_REQUEST_TTL_MS, type KeyKind } from "@/lib/key-signin/rules";
-import { validPocket } from "@/lib/pockets/coins";
+import { SEEDS_POCKET } from "@/lib/pockets/coins";
 import { currentKeyOrigin, SEEDS_PREVIEW_ORIGIN, seedsOrigins } from "./policy";
 import { submitFailureMessage } from "./submit-errors";
 
@@ -71,7 +71,7 @@ export function checkManifest(url: URL, m: unknown, keyOrigin = currentKeyOrigin
     typeof recipient !== "string" ||
     !/^[A-Za-z0-9_-]{43}$/.test(recipient) ||
     typeof expires !== "string" ||
-    !validPocket(pocket)
+    pocket !== SEEDS_POCKET
   ) {
     throw new Error("This sign-in request is incomplete.");
   }
@@ -105,7 +105,7 @@ export function checkManifest(url: URL, m: unknown, keyOrigin = currentKeyOrigin
   if (kinds !== undefined && (!Array.isArray(kinds) || !kinds.length || !kinds.every(isKeyKind))) {
     throw new Error("This sign-in request has invalid wallet choices.");
   }
-  return {
+  const checked: FullManifest = {
     type: "seeds-key-signin",
     version: 1,
     domain,
@@ -123,6 +123,9 @@ export function checkManifest(url: URL, m: unknown, keyOrigin = currentKeyOrigin
     ...(x["vault_request"] !== undefined ? { vault_request: x["vault_request"] } : {}),
     ...(Array.isArray(kinds) ? { kinds: kinds.filter(isKeyKind) } : {}),
   };
+  if (manifestProblem(url.href, checked))
+    throw new Error("This sign-in request isn't from Seeds or is no longer valid.");
+  return checked;
 }
 
 export function validateActiveManifest(manifest: FullManifest): FullManifest {
@@ -168,7 +171,7 @@ export function readSubmit(status: number, value: unknown): SubmitResult {
     return { ok: false, error: "Seeds returned an invalid response. Start again on Seeds." };
   const body = value as Record<string, unknown>;
   if (status === 200) {
-    if (!validPocket(body["pocket"]))
+    if (body["pocket"] !== SEEDS_POCKET)
       return { ok: false, error: "Seeds returned an invalid pocket. Start again on Seeds." };
     if (body["signed_in"] === false && body["needs_confirm"] === true)
       return { ok: true, signedIn: false, needsConfirm: true, pocket: body["pocket"] };
@@ -184,7 +187,7 @@ export function readSubmit(status: number, value: unknown): SubmitResult {
     };
   }
   if (status === 409 && body["error"] === "use_pocket")
-    return validPocket(body["account"])
+    return body["account"] === SEEDS_POCKET
       ? { ok: false, usePocket: body["account"] }
       : { ok: false, error: "Seeds returned an invalid pocket. Start again on Seeds." };
   if (status === 409 && body["error"] === "already used") return { ok: false, error: EXPIRED };
@@ -215,38 +218,37 @@ export function readSubmit(status: number, value: unknown): SubmitResult {
   };
 }
 
-/** Build, sign, POST; on use_pocket, rebuild on the pocket Seeds names (at most 5 tries). */
+/** Build and sign only pocket 1106, then POST once; never follow a pocket-changing retry. */
 export async function submitWithRetry(
   manifest: FullManifest,
   build: (account?: number) => Promise<{ message: string; body: Record<string, unknown> }>,
   sign: (message: string) => Promise<string>,
   signal?: AbortSignal,
 ): Promise<HandoffResult> {
-  let account: number | undefined;
-  for (let i = 0; i < 5; i++) {
-    signal?.throwIfAborted();
-    validateActiveManifest(manifest);
-    const h = await build(account);
-    const signature = await sign(h.message);
-    signal?.throwIfAborted();
-    validateActiveManifest(manifest);
-    const res = await fetch(manifest.submit_url, {
-      method: "POST",
-      credentials: "omit",
-      redirect: "error",
-      cache: "no-store",
-      ...(signal ? { signal } : {}),
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...h.body, message: h.message, signature }),
-    });
-    const body: unknown = await res.json().catch(() => ({}));
-    const r = readSubmit(res.status, body);
-    if (r.ok) return r;
-    if ("usePocket" in r) {
-      account = r.usePocket;
-      continue;
-    }
-    throw new Error(r.error);
-  }
-  throw new Error("Seeds kept asking for a different pocket. Start again on Seeds.");
+  signal?.throwIfAborted();
+  validateActiveManifest(manifest);
+  const h = await build(SEEDS_POCKET);
+  if (h.body["account"] !== SEEDS_POCKET)
+    throw new Error("Only trading pocket 1106 can be linked. Start again on Seeds.");
+  const signature = await sign(h.message);
+  signal?.throwIfAborted();
+  validateActiveManifest(manifest);
+  const res = await fetch(manifest.submit_url, {
+    method: "POST",
+    credentials: "omit",
+    redirect: "error",
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...h.body, message: h.message, signature }),
+  });
+  const body: unknown = await res.json().catch(() => ({}));
+  signal?.throwIfAborted();
+  const r = readSubmit(res.status, body);
+  if (r.ok) return r;
+  if ("usePocket" in r)
+    throw new Error(
+      "Seeds asked to rebuild the pocket. Start again on Seeds; only pocket 1106 is supported.",
+    );
+  throw new Error(r.error);
 }

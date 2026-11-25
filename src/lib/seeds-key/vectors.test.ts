@@ -65,11 +65,8 @@ describe("only talks to Seeds", () => {
     };
     expect(() => checkManifest(url, m)).toThrow();
   });
-  it("409 use_pocket asks for another pocket", () => {
-    expect(readSubmit(409, { error: "use_pocket", account: 1107 })).toEqual({
-      ok: false,
-      usePocket: 1107,
-    });
+  it("409 cannot authorize a different pocket", () => {
+    expect(readSubmit(409, { error: "use_pocket", account: 1107 })).not.toHaveProperty("usePocket");
   });
 });
 

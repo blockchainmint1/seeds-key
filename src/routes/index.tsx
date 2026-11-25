@@ -173,6 +173,17 @@ function Welcome() {
           </li>
         </ul>
       </div>
+      <div>
+        <h2 className="text-xl">Trading pocket coverage</h2>
+        <p className="mt-2 text-muted-foreground">
+          Ethereum, BNB Chain, Base, PulseChain, HYPE (HyperEVM) and AVAX (C-Chain) share your EVM
+          key. Cardano and Monero keys are included too.
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Monero remains off on Seeds pending its send checks. Stellar, TON and Sui are not included
+          yet. HyperCore is not supported.
+        </p>
+      </div>
       <div className="panel p-5 text-sm text-muted-foreground">
         Start from{" "}
         <a className="text-primary underline" href="https://seeds.honest.money">
