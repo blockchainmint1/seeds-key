@@ -122,14 +122,14 @@ describe("manifest identity and protocol validation", () => {
       ),
     ).toThrow();
   });
-  it("labels legitimate previews and preserves their signed host", () => {
-    const m = checkManifest(
-      url(SEEDS_PREVIEW_ORIGIN),
-      fixture(SEEDS_PREVIEW_ORIGIN, KEY_PREVIEW_ORIGIN),
-      KEY_PREVIEW_ORIGIN,
-    );
-    expect(m.domain).toBe(new URL(SEEDS_PREVIEW_ORIGIN).host);
-    expect(m.app_name).toBe("Seeds Exchange (preview)");
+  it("refuses SEEDS preview requests since SEEDS removed preview trust (2026-11-25)", () => {
+    expect(() =>
+      checkManifest(
+        url(SEEDS_PREVIEW_ORIGIN),
+        fixture(SEEDS_PREVIEW_ORIGIN, KEY_PREVIEW_ORIGIN),
+        KEY_PREVIEW_ORIGIN,
+      ),
+    ).toThrow();
   });
   it("requires the exact same-origin submit endpoint", () => {
     for (const endpoint of [

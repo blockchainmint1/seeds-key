@@ -112,23 +112,23 @@ describe("HME Vault link", () => {
     r.body.vault_fingerprint = "73c5da0";
     expect(() => readVaultResponse(JSON.stringify(r), m)).toThrow(/seed ID/);
   });
-  it("future requested paths do not add exports or discard the existing sixteen families", async () => {
+  it("future requested paths do not add exports or discard the nineteen families", async () => {
     const m = vaultManifest();
     const original = m.vault_request as { paths: string[] };
     m.vault_request = signedRequest({
       issued_at: m.issued_at,
       expires_at: m.expires_at,
-      paths: [...original.paths, "m/44'/148'/1106'", "m/44'/607'/1106'", "m/44'/784'/1106'/0'/0'"],
+      paths: [...original.paths, "m/44'/900'/1106'", "m/44'/901'/1106'", "m/44'/902'/1106'/0'/0'"],
     });
     const req = readVaultRequest(vaultRequestText(m), TEST_TRUST);
-    expect(req.paths).toHaveLength(19);
+    expect(req.paths).toHaveLength(22);
     const text = await buildVaultResponse(req, PHRASE, TEST_TRUST);
     const h = readVaultResponse(text, m);
-    expect(h.body["paths"]).toHaveLength(16);
+    expect(h.body["paths"]).toHaveLength(19);
     expect(Object.keys(h.body["xpubs"] as object).sort()).toEqual([...POCKET_COINS].sort());
     expect(h.body["account"]).toBe(1106);
   });
-  it("Vault answer for pocket 1106 covers all 16 chains and is accepted", async () => {
+  it("Vault answer for pocket 1106 covers all 19 chains and is accepted", async () => {
     const { h } = await answer();
     expect(h.body["account"]).toBe(1106);
     expect(Object.keys(h.body["xpubs"] as object).sort()).toEqual([...POCKET_COINS].sort());

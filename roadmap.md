@@ -22,7 +22,7 @@
 
 - Current Vault compatibility APK — await its independent approval and release artifact/build-run evidence; active-verifier source work is complete, but its installed APK is not verified here.
 - Compatibility release coordination — await authorized production phone test of current reviewed builds, SEEDS final confirmation/readback and release authorization; check live headers/assets after publish. The preparation audit and built-output guard at `b7dfba9` are complete; the small follow-up commit accompanies the new review packet.
-- XLM/TON/SUI export activation — blocked on SEEDS' written acceptance go-ahead and independently reviewed vectors; do not add these keys yet.
+- [x] XLM/TON/SUI export — enabled after SEEDS' written go-ahead (2026-11-25, live 3387f3b); publish after review.
 - Direct Vault entry for SEEDS' `?kind=vault` link — separate navigation request in SEEDS' roadmap, not implemented in this review-tidy-up scope; existing coin → Continue → Vault flow remains available.
 - Private vulnerability-report destination — awaiting an owner-approved inbox or confirmed private repository reporting
 - Physical Ledger verification across models, firmware and browsers

@@ -180,8 +180,8 @@ function Welcome() {
           key. Cardano and Monero keys are included too.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Monero remains off on Seeds pending its send checks. Stellar, TON and Sui are not included
-          yet. HyperCore is not supported.
+          Stellar, TON and Sui keys are included; Seeds holds them until sending on those chains
+          is ready. Monero remains off on Seeds pending its send checks. HyperCore is not supported.
         </p>
       </div>
       <div className="panel p-5 text-sm text-muted-foreground">

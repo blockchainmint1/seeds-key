@@ -28,6 +28,8 @@ sha256sum src/lib/key-signin/rules.ts src/lib/pockets/coins.ts
 
 These files and the other declared SEEDS reference modules remain verbatim copies. Obtain the recorded upstream snapshot independently for byte-for-byte comparison. Re-copy upstream files rather than editing them locally.
 
+XLM/TON/SUI support (`coins.ts`, `derive.ts`, `encode.ts`, `ed25519-chains.ts`, `rules.ts`, `seeds-key-reference.ts`) was re-copied from SEEDS live audited commit **`3387f3b`** on 2026-11-25, after SEEDS' written go-ahead. coins.ts `b1e07f46…`, rules.ts `bd088e9f…`, seeds-key-reference.ts `ef830bb0…`, ed25519-chains.ts `f8ea608c…`.
+
 The extra-password (BIP39 passphrase) support in `src/lib/key-signin/seeds-key-reference.ts` was re-copied from SEEDS snapshot **`3ed79f2d`** at Key commit **`780ae69`**.
 
 ## Vault request-signing key verification

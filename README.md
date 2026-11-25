@@ -25,9 +25,9 @@ Seeds Key is the front door to Seeds Exchange for anyone who already holds hones
 | 🦊 **Your wallet**                    | MetaMask, Rabby, Coinbase Wallet or Phantom                                                                     |
 | 🔌 **Ledger**                         | Directly over USB or Bluetooth (Ethereum app)                                                                   |
 
-One sign-in sets up trading keys for **16 chain families**: TXC, ISK, Bitcoin, Litecoin, Ethereum / BNB / Base / PulseChain / HyperEVM / Avalanche C-Chain, Dogecoin, Bitcoin Cash, Zcash, XRP, TRON, Solana, Dash, Cosmos, THORChain, Cardano and Monero.
+One sign-in sets up trading keys for **19 chain families**: TXC, ISK, Bitcoin, Litecoin, Ethereum / BNB / Base / PulseChain / HyperEVM / Avalanche C-Chain, Dogecoin, Bitcoin Cash, Zcash, XRP, TRON, Solana, Dash, Cosmos, THORChain, Cardano, Monero, Stellar, TON and Sui.
 
-HYPE (HyperEVM, not HyperCore) and AVAX use the existing EVM key. Cardano and Monero keys are already included; Monero remains disabled on SEEDS pending its server and send checks. Stellar, TON and Sui exports stay off until SEEDS provides written acceptance approval and reviewed vectors. See [new-coin preparation](docs/new-coins-preparation.md).
+HYPE (HyperEVM, not HyperCore) and AVAX use the existing EVM key. Cardano and Monero keys are already included; Monero remains disabled on SEEDS pending its server and send checks. Stellar, TON (W5) and Sui are included since SEEDS' written go-ahead of 2026-11-25 (live release `3387f3b`); SEEDS holds them until its signer for those chains is audited. See [new-coin preparation](docs/new-coins-preparation.md).
 
 ## 🛡️ Built to be trusted
 

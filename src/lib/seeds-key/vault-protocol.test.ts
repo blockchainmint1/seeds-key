@@ -44,17 +44,17 @@ describe("signed Vault request policy", () => {
     });
     expect(() => readSignedVaultRequest(signedRequest())).toThrow(/verified signing key/);
   });
-  it("accepts the pinned signer for pocket 1106 and 16 chains", () => {
+  it("accepts the pinned signer for pocket 1106 and 19 chains", () => {
     const r = readSignedVaultRequest(signedRequest(), TEST_TRUST);
     expect(r.pocket).toBe(1106);
-    expect(r.paths).toHaveLength(16);
+    expect(r.paths).toHaveLength(19);
   });
   it("accepts future optional paths and verifies the original signed order", () => {
     const paths = [
       ...POCKET_COINS.map((c) => accountPath(c, 1106)).reverse(),
-      "m/44'/148'/1106'",
-      "m/44'/607'/1106'",
-      "m/44'/784'/1106'/0'/0'",
+      "m/44'/900'/1106'",
+      "m/44'/901'/1106'",
+      "m/44'/902'/1106'/0'/0'",
     ];
     const req = signedRequest({ paths });
     expect(readSignedVaultRequest(req, TEST_TRUST).paths).toEqual(paths);
@@ -87,7 +87,7 @@ describe("signed Vault request policy", () => {
   });
   it("caps signed path lists at forty", () => {
     const paths = POCKET_COINS.map((c) => accountPath(c, 1106));
-    const extras = Array.from({ length: 24 }, (_, i) => `m/44'/${800 + i}'/1106'`);
+    const extras = Array.from({ length: 21 }, (_, i) => `m/44'/${800 + i}'/1106'`);
     expect(
       readSignedVaultRequest(signedRequest({ paths: [...paths, ...extras] }), TEST_TRUST).paths,
     ).toHaveLength(40);

@@ -5,7 +5,7 @@ import { sha256 } from "@noble/hashes/sha2.js";
 import { base64urlnopad } from "@scure/base";
 import { coinSignIn } from "./flows";
 import { buildHandoff } from "@/lib/key-signin/seeds-key-reference";
-import { pocketKeysMatch, pocketsFromMnemonic } from "@/lib/pockets/derive";
+import { pocketKeysMatch, pocketReceiveAddress, pocketsFromMnemonic } from "@/lib/pockets/derive";
 import { POCKET_COINS, accountPath } from "@/lib/pockets/coins";
 import { vaultManifest } from "@/test/vault-fixture";
 
@@ -57,7 +57,7 @@ afterEach(() => {
 
 describe("existing family preservation", () => {
   it.each(["coin", "evm", "sol"] as const)(
-    "%s first link and re-link seal all sixteen matching private keys at 1106",
+    "%s first link and re-link seal all nineteen matching private keys at 1106",
     async (kind) => {
       const manifest = vaultManifest();
       const expected = pocketsFromMnemonic(WORDS, { account: 1106 });
@@ -90,9 +90,14 @@ describe("existing family preservation", () => {
         expect(h.body.paths).toContain("m/44'/60'/1106'");
         expect(h.body.paths).toContain("m/1852'/1815'/1106'");
         expect(h.body.paths).toContain("m/44'/128'/1106'");
-        expect(h.body.xpubs).not.toHaveProperty("XLM");
-        expect(h.body.xpubs).not.toHaveProperty("TON");
-        expect(h.body.xpubs).not.toHaveProperty("SUI");
+        // SEEDS go-ahead 2026-11-25 (live 3387f3b) vectors, docs/hme-wallet-extra-pockets.md.
+        expect(h.body.xpubs["XLM"]).toBe("GARWV2LPPTIXJYVWMINIZHNKNUCR3FDVANOPTZXGYV3765UZKSHWV5AI");
+        expect(h.body.xpubs["SUI"]).toBe(
+          "0xc103715616f6451c7d969ef90d20d1016924dad27e9c36cd3c1bd5ee5c36b8a1",
+        );
+        expect(pocketReceiveAddress("TON", h.body.xpubs["TON"]!)).toBe(
+          "UQCsq4rzqzuJvOOkCj00SPdMru6-SHmeDuGf2_ecmdjlNwcm",
+        );
       }
       for (const coin of POCKET_COINS) expected.xprvs[coin] = "";
     },
