@@ -23,3 +23,21 @@ Owner approved the safe preparation from the v3 SEEDS handoff. This is not appro
 ## Limits and release gates
 
 Changes in this chat affect Key only; snapshots cannot modify Vault or SEEDS. A new Vault APK and its active verifier remain the Vault team's responsibility. XLM/TON/SUI derivation, optional response acceptance, independent vectors, full release audit, physical APK tests and production phone round-trip remain outside this preparation. No seed or private key needs to be supplied by Bobby.
+
+## Independent review and coordination update — 2026-11-25
+
+- The supplied independent review approves Key preparation at `b7dfba9`, reports 175 passing tests and a passing built-output guard (13 assets). This closes the preparation-review and KMS pure-Ed25519 questions for that version, not the physical-device or future-export release gates.
+- The public SEEDS endpoint's exact 19-path signed example is retained in `src/test/seeds-signed-request-example.json`. Tests verify it with Key's pinned production signer at its fixed January clock, reject challenge tampering and reject it at expiry. It must never be used as a live sign-in.
+- Owner-approved clarity change: the Vault answer account and manifest pocket must each equal `SEEDS_POCKET`. No account, identity, key, envelope or export is changed.
+- Vault snapshot `f4d7de00` now has the active 40-path verifier and preserves its exact 16-family response, KMS pin, signed seed label and cancellation checks. Its roadmap reports 648 tests and an APK 1.0.4 review handoff; that is source/project evidence, not inspection of an installed 1.0.4 APK here.
+- SEEDS snapshot `246101b3` includes XLM/TON/SUI acceptance definitions and chain-reference-library tests. The supplied v3 handoff still explicitly says not to ship new keys until written go-ahead after audited, published acceptance. Source implementation or a signed 19-path request is not that go-ahead.
+- HME Wallet snapshot `d2e662bf` remains a separate release owner; this chat cannot change its exports or publish its app.
+- SEEDS' roadmap also requests a direct `?kind=vault` entry on Key. That separate navigation request is not implemented in these two approved review tidy-ups and is not required for the existing coin → Continue → Vault route.
+
+### Send to SEEDS now
+
+> Key preparation passed independent review; the real KMS-signed 19-path example now has permanent verification/tampering/expiry tests. Vault's active verifier has been updated too. Please distinguish acceptance shipping from wallet export activation: publish and audit XLM/TON/SUI acceptance while continuing to accept existing 16-family links, then provide written go-ahead naming the live release, auditor approval and reviewed account-0/1106 XLM/TON-W5/SUI and 12/24-word plain-Icarus ADA vectors. Your v3 handoff still tells wallets to wait for this. Account zero remains test-vector-only, never delegated.
+
+### Send to HME Vault and HME Wallet now
+
+> Key is ready for the 16-family compatibility release; the missing signer and preparation-audit blockers are closed. Keep all existing 1106 families and the Vault label unchanged. Coordinate your reviewed release artifacts and a disposable-seed phone test. New XLM/TON/SUI exports remain off until SEEDS supplies its written, audited live-acceptance go-ahead and reviewed vectors; after that each wallet team can implement and review its matching exports. Do not wait for Key to export new keys before SEEDS ships acceptance.

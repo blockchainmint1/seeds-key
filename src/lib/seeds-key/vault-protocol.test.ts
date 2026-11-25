@@ -7,8 +7,37 @@ import {
 import { buildVaultResponse } from "./vault-link-reference";
 import { POCKET_COINS, accountPath } from "@/lib/pockets/coins";
 import { signedRequest, TEST_TRUST } from "@/test/vault-fixture";
+import seedsExample from "@/test/seeds-signed-request-example.json";
 
 describe("signed Vault request policy", () => {
+  // Public /api/public/key-signin/vault-signer example captured 2026-11-25.
+  // Its fixed January clock is for verification only, never a usable sign-in.
+  it("verifies SEEDS' real KMS-signed nineteen-path example with the pinned key", () => {
+    const now = Date.parse("2026-01-01T00:00:00.000Z");
+    const verified = readSignedVaultRequest(seedsExample, SEEDS_REQUEST_KEYS, now);
+    expect(verified.signing_key_id).toBe("seeds-vault-kms-2026-11");
+    expect(verified.pocket).toBe(1106);
+    expect(verified.paths).toHaveLength(19);
+    expect(verified.paths).toEqual(seedsExample.paths);
+  });
+  it("rejects a changed challenge in SEEDS' real signed example", () => {
+    expect(() =>
+      readSignedVaultRequest(
+        { ...seedsExample, challenge: "b".repeat(48) },
+        SEEDS_REQUEST_KEYS,
+        Date.parse("2026-01-01T00:00:00.000Z"),
+      ),
+    ).toThrow(/couldn't be verified/);
+  });
+  it("rejects SEEDS' real signed example at its exact expiry", () => {
+    expect(() =>
+      readSignedVaultRequest(
+        seedsExample,
+        SEEDS_REQUEST_KEYS,
+        Date.parse("2026-01-01T00:10:00.000Z"),
+      ),
+    ).toThrow(/expired/);
+  });
   it("production pins only the verified SEEDS key and rejects the test signer", () => {
     expect(SEEDS_REQUEST_KEYS).toEqual({
       "seeds-vault-kms-2026-11": "6_06ZOHGeDeGX7O1ToRTAmdiGs0_AOSSX70VbTd9IjA",

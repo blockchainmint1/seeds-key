@@ -135,6 +135,13 @@ describe("HME Vault link", () => {
     expect(h.identity).toBe("TZZCuca5ntPVCJL5ryTjh465Jvw5vHxsVd");
     expect(vaultSignerName(h)).toContain("ZZCuca");
   });
+  it("refuses an answer or manifest using pocket 1107 instead of 1106", async () => {
+    const { m, text } = await answer();
+    const r = JSON.parse(text);
+    r.body.account = 1107;
+    expect(() => readVaultResponse(JSON.stringify(r), m)).toThrow(/different pocket/);
+    expect(() => readVaultResponse(text, { ...m, pocket: 1107 })).toThrow(/different pocket/);
+  });
   it("signed request retains signature and matching code without recovery words", () => {
     const text = vaultRequestText(vaultManifest());
     expect(text).not.toContain(PHRASE);

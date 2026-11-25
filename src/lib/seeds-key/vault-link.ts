@@ -14,7 +14,7 @@ import { sha256 } from "@noble/hashes/sha2.js";
 import { ripemd160 } from "@noble/hashes/legacy.js";
 import { base64, base64urlnopad, createBase58check } from "@scure/base";
 import { keySigninMessage, normalizeIdentity, shortKeyName } from "@/lib/key-signin/rules";
-import { POCKET_COINS, accountPath, type PocketCoin } from "@/lib/pockets/coins";
+import { POCKET_COINS, SEEDS_POCKET, accountPath, type PocketCoin } from "@/lib/pockets/coins";
 import { readVaultLabel } from "./vault-label";
 import {
   readSubmit,
@@ -144,7 +144,7 @@ export function readVaultResponse(text: string, m: FullManifest): VaultHandoff {
   const identity = normalizeIdentity("coin", String(body["identity_address"] ?? ""));
   if (!identity) throw new Error(BAD);
   const account = body["account"];
-  if (account !== 1106 || account !== m.pocket)
+  if (account !== SEEDS_POCKET || m.pocket !== SEEDS_POCKET)
     throw new Error(
       "The Vault used a different pocket than Seeds asked for. Start again on the Vault.",
     );
